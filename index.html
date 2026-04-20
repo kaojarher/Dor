@@ -1,0 +1,2062 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>失落的封印 EMOJI版</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;image-rendering:pixelated;}
+html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:'Noto Sans TC',sans-serif;}
+
+/* ── OUTER SHELL ── */
+#shell{
+  width:100vw;height:100vh;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  background:#0d0d1a;
+}
+#game{
+  position:relative;
+  border:3px solid #4a6;
+  box-shadow:0 0 0 2px #000, 0 0 0 4px #2a4, 0 0 30px rgba(0,180,80,0.3);
+  background:#000;
+  overflow:hidden;
+}
+
+/* ── CANVAS ── */
+#gc{display:block;cursor:crosshair;}
+
+/* ── TOP HUD (like original: 裝備 法術 物品 狀態 / 金) ── */
+#hud-top{
+  position:absolute;top:0;left:0;
+  display:flex;flex-direction:column;
+  gap:0;
+  pointer-events:all;
+  z-index:10;
+}
+.hud-panel{
+  background:rgba(0,0,0,0.78);
+  border:2px solid #4a6;
+  border-right:2px solid #4a6;
+  border-bottom:2px solid #4a6;
+  padding:3px 8px;
+  min-width:90px;
+}
+.hud-menu{display:flex;flex-wrap:wrap;gap:0;}
+.hmenu-btn{
+  color:#88ffcc;
+  font-size:11px;font-weight:700;
+  cursor:pointer;
+  padding:1px 4px;
+  border-radius:2px;
+  transition:background 0.1s;
+  white-space:nowrap;
+}
+.hmenu-btn:hover{background:rgba(68,255,170,0.2);}
+.hud-gold{color:#ffdd44;font-size:11px;font-weight:700;padding:2px 0;}
+
+/* ── BOTTOM HUD (like original: 體力 法力 狀況 + name/hp/mp) ── */
+#hud-bot{
+  position:absolute;bottom:0;left:0;right:0;
+  display:flex;
+  pointer-events:all;
+  z-index:10;
+}
+#hud-bot-left{
+  background:rgba(0,0,0,0.78);
+  border:2px solid #4a6;
+  border-left:none;border-bottom:none;
+  padding:2px 6px;
+  display:flex;flex-direction:column;gap:1px;
+  min-width:44px;
+}
+.hud-stat-lbl{color:#88ffcc;font-size:10px;font-weight:700;cursor:pointer;}
+.hud-stat-lbl:hover{color:#fff;}
+#hud-bot-right{
+  flex:1;
+  background:rgba(0,0,0,0.78);
+  border:2px solid #4a6;
+  border-bottom:none;
+  padding:4px 10px;
+  display:flex;align-items:center;gap:14px;
+}
+.hero-info{display:flex;flex-direction:column;gap:1px;}
+.hi-name{color:#fff;font-size:12px;font-weight:900;}
+.hi-stat{color:#aaa;font-size:10px;}
+.hi-stat span{color:#88ffcc;}
+.hi-lv{color:#ffdd44;font-size:10px;font-weight:700;}
+
+/* ── DIALOG BOX ── */
+#dialog{
+  position:absolute;bottom:0;left:0;right:0;
+  background:rgba(0,0,0,0.92);
+  border-top:3px solid #4a6;
+  padding:8px 14px 10px;
+  font-size:13px;color:#e8ffe8;
+  line-height:1.7;
+  min-height:60px;
+  z-index:20;
+  display:none;
+  pointer-events:all;
+}
+#dialog-name{color:#ffdd44;font-weight:900;margin-bottom:2px;font-size:12px;}
+#dialog-text{white-space:pre-wrap;}
+#dialog-prompt{color:#88ffcc;font-size:10px;margin-top:4px;animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+#dialog-choices{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;}
+.dchoice{
+  background:#1a3a1a;border:1px solid #4a6;
+  color:#88ffcc;font-size:11px;padding:3px 10px;
+  cursor:pointer;border-radius:2px;
+  transition:background 0.1s;
+}
+.dchoice:hover{background:#2a5a2a;}
+
+/* ── BATTLE SCREEN ── */
+#battle{
+  position:absolute;inset:0;
+  background:#050510;
+  z-index:30;
+  display:none;
+  flex-direction:column;
+}
+#battle.active{display:flex;}
+#bt-bg{
+  flex:1;
+  position:relative;
+  background:linear-gradient(180deg,#0a0820 0%,#0d1a0d 60%,#1a1000 100%);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:flex-end;
+  padding-bottom:8px;
+  overflow:hidden;
+}
+/* pixel floor line */
+#bt-bg::after{
+  content:'';position:absolute;bottom:25%;left:0;right:0;
+  height:2px;background:rgba(255,255,255,0.07);
+}
+#bt-enemies{
+  display:flex;gap:24px;align-items:flex-end;
+  position:absolute;top:12%;left:0;right:0;
+  justify-content:center;
+}
+.bt-enemy{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  cursor:pointer;transition:transform 0.1s;
+  user-select:none;
+}
+.bt-enemy:hover:not(.dead){transform:scale(1.08);}
+.bt-enemy.dead{opacity:0.15;filter:grayscale(1);pointer-events:none;}
+.be-sprite{font-size:clamp(2.5rem,6vw,3.5rem);line-height:1;
+  filter:drop-shadow(0 4px 8px rgba(0,0,0,0.8));
+  animation:float 2.5s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.be-name{font-size:10px;color:#ff9999;font-weight:700;}
+.be-hpbar{width:60px;height:5px;background:#300;border-radius:3px;overflow:hidden;}
+.be-hpfill{height:100%;background:#f44;border-radius:3px;transition:width 0.3s;}
+.be-boss-crown{font-size:0.8rem;animation:spin 3s linear infinite;}
+@keyframes spin{from{transform:rotate(-10deg)}50%{transform:rotate(10deg)}to{transform:rotate(-10deg)}}
+
+#bt-party{
+  position:absolute;bottom:22%;left:0;right:0;
+  display:flex;gap:20px;justify-content:center;
+  pointer-events:none;
+}
+.bt-hero{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+}
+.bh-sprite{font-size:clamp(1.8rem,4vw,2.5rem);line-height:1;
+  filter:drop-shadow(0 3px 6px rgba(0,0,0,0.8));
+  animation:heroIdle 1.8s ease-in-out infinite;}
+@keyframes heroIdle{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.bh-name{font-size:9px;color:#88ffcc;}
+
+/* battle status bars */
+#bt-status{
+  background:rgba(0,0,0,0.9);
+  border-top:2px solid #4a6;
+  padding:6px 10px;
+  display:flex;gap:10px;
+  flex-wrap:wrap;
+}
+.bts-hero{
+  background:#0a1a0a;
+  border:1px solid #2a4a2a;
+  border-radius:4px;
+  padding:4px 8px;
+  min-width:110px;
+}
+.bts-name{font-size:10px;font-weight:700;color:#fff;margin-bottom:2px;}
+.bts-bar-row{display:flex;align-items:center;gap:4px;margin-bottom:2px;}
+.bts-lbl{font-size:9px;color:#888;width:18px;}
+.bts-bg{flex:1;height:5px;background:#111;border-radius:3px;overflow:hidden;}
+.bts-fill{height:100%;border-radius:3px;transition:width 0.3s;}
+.bts-hp{background:#f44;}
+.bts-mp{background:#44f;}
+.bts-val{font-size:9px;color:#888;width:50px;text-align:right;}
+
+/* battle commands */
+#bt-cmds{
+  background:rgba(0,0,0,0.95);
+  border-top:2px solid #4a6;
+  display:flex;gap:0;
+}
+.btcmd{
+  flex:1;padding:8px 4px;
+  background:transparent;border:none;border-right:1px solid #1a3a1a;
+  color:#88ffcc;font-family:'Noto Sans TC',sans-serif;
+  font-size:clamp(9px,2vw,12px);font-weight:700;
+  cursor:pointer;transition:background 0.1s;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+}
+.btcmd:hover{background:#1a3a1a;}
+.btcmd:last-child{border-right:none;}
+.btcmd-icon{font-size:1.2rem;}
+
+/* battle log */
+#bt-log{
+  background:#050810;
+  border-top:1px solid #1a2a1a;
+  padding:5px 10px;
+  font-size:11px;color:#ccc;
+  min-height:36px;max-height:60px;
+  overflow-y:auto;
+  line-height:1.6;
+}
+#bt-log p{margin:0;}
+.bl-dmg{color:#ff8888;}
+.bl-heal{color:#88ffcc;}
+.bl-sys{color:#ffdd44;}
+.bl-die{color:#ff4444;font-weight:700;}
+
+/* damage float */
+.dmgfloat{
+  position:absolute;pointer-events:none;
+  font-weight:900;font-size:1.3rem;
+  text-shadow:0 2px 6px #000;
+  animation:dmgf 0.9s ease forwards;
+  z-index:50;
+}
+@keyframes dmgf{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-50px)}}
+
+/* ── POPUP MENU ── */
+#popup{
+  position:absolute;
+  background:rgba(0,0,0,0.95);
+  border:2px solid #4a6;
+  z-index:40;
+  min-width:160px;
+  display:none;
+}
+#popup.active{display:block;}
+.popup-title{
+  background:#0a2a0a;
+  color:#ffdd44;font-size:11px;font-weight:700;
+  padding:4px 10px;border-bottom:1px solid #2a4a2a;
+}
+.popup-scroll{max-height:220px;overflow-y:auto;}
+.popup-item{
+  padding:5px 10px;
+  color:#e8ffe8;font-size:11px;
+  cursor:pointer;
+  display:flex;align-items:center;gap:6px;
+  border-bottom:1px solid #0a1a0a;
+  transition:background 0.1s;
+}
+.popup-item:hover{background:#1a3a1a;}
+.popup-item .pi-emoji{font-size:1rem;}
+.popup-item .pi-sub{color:#888;font-size:9px;margin-left:auto;}
+.popup-close{
+  padding:4px;text-align:center;
+  color:#ff8888;font-size:10px;cursor:pointer;
+  border-top:1px solid #2a4a2a;
+}
+.popup-close:hover{background:#2a0a0a;}
+
+/* ── MOVE CURSOR ── */
+.click-marker{
+  position:absolute;pointer-events:none;z-index:8;
+  width:20px;height:20px;
+  border:2px solid #ffff44;
+  border-radius:50%;
+  transform:translate(-50%,-50%);
+  animation:pulseMark 0.5s ease forwards;
+}
+@keyframes pulseMark{from{opacity:1;transform:translate(-50%,-50%) scale(1)}to{opacity:0;transform:translate(-50%,-50%) scale(2)}}
+
+/* ── NOTIFY ── */
+#notif{position:fixed;top:10px;right:10px;z-index:200;display:flex;flex-direction:column;gap:4px;pointer-events:none;}
+.nmsg{
+  background:rgba(0,0,0,0.9);border:1px solid #4a6;
+  border-radius:3px;padding:5px 12px;
+  font-size:11px;color:#e8ffe8;
+  animation:nin 0.2s,nout 0.3s 2s forwards;
+}
+@keyframes nin{from{opacity:0;transform:translateX(15px)}to{opacity:1;transform:none}}
+@keytml nout{to{opacity:0}}
+@keyframes nout{to{opacity:0}}
+
+/* scrollbar */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:#000;}
+::-webkit-scrollbar-thumb{background:#2a4a2a;}
+
+/* ── VIRTUAL JOYSTICK ── */
+#joystick-wrap{
+  position:fixed;
+  bottom:70px; right:18px;
+  width:110px; height:110px;
+  z-index:200;
+  pointer-events:all;
+  touch-action:none;
+  user-select:none;
+}
+#joystick-base{
+  width:110px; height:110px;
+  border-radius:50%;
+  background:rgba(0,0,0,0.45);
+  border:2px solid rgba(68,170,100,0.55);
+  position:relative;
+  box-shadow:0 0 14px rgba(0,180,80,0.18);
+}
+#joystick-stick{
+  width:44px; height:44px;
+  border-radius:50%;
+  background:radial-gradient(circle at 38% 35%, rgba(136,255,204,0.85), rgba(34,120,60,0.9));
+  border:2px solid rgba(68,170,100,0.8);
+  position:absolute;
+  top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  margin-left:0; margin-top:0;
+  box-shadow:0 2px 10px rgba(0,0,0,0.6);
+  transition:box-shadow 0.1s;
+  cursor:grab;
+  pointer-events:none;
+}
+#joystick-stick.active{
+  box-shadow:0 0 14px rgba(68,255,170,0.6);
+  cursor:grabbing;
+}
+/* direction arrows hint */
+#joystick-arrows{
+  position:absolute;inset:0;
+  pointer-events:none;
+  display:flex;align-items:center;justify-content:center;
+}
+.ja{
+  position:absolute;
+  color:rgba(68,170,100,0.35);
+  font-size:14px;
+  line-height:1;
+}
+.ja-up{top:5px;left:50%;transform:translateX(-50%);}
+.ja-down{bottom:5px;left:50%;transform:translateX(-50%);}
+.ja-left{left:5px;top:50%;transform:translateY(-50%);}
+.ja-right{right:5px;top:50%;transform:translateY(-50%);}
+
+/* ── TITLE SCREEN ── */
+#title-screen{
+  position:absolute;inset:0;
+  background:#000;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:100;
+  gap:16px;
+}
+.ts-logo{
+  font-size:clamp(1.2rem,4vw,2rem);
+  font-weight:900;color:#4a6;
+  text-shadow:0 0 20px rgba(68,170,100,0.8);
+  letter-spacing:0.1em;
+  text-align:center;
+}
+.ts-sub{font-size:0.75rem;color:#4a6;opacity:0.7;}
+.ts-btns{display:flex;flex-direction:column;gap:8px;align-items:center;}
+.ts-btn{
+  background:#0a2a0a;border:2px solid #4a6;
+  color:#88ffcc;font-family:'Noto Sans TC',sans-serif;font-size:13px;font-weight:700;
+  padding:8px 32px;cursor:pointer;
+  transition:all 0.15s;min-width:160px;
+}
+.ts-btn:hover{background:#1a4a1a;box-shadow:0 0 10px rgba(68,170,100,0.4);}
+.ts-desc{font-size:10px;color:#4a6;text-align:center;max-width:240px;line-height:1.6;}
+</style>
+</head>
+<body>
+<div id="shell">
+<div id="game">
+  <canvas id="gc"></canvas>
+
+  <!-- TOP-LEFT HUD: 裝備 法術 物品 狀態 / 金 -->
+  <div id="hud-top">
+    <div class="hud-panel">
+      <div class="hud-menu">
+        <span class="hmenu-btn" onclick="openMenu('equip')">裝備</span>
+      </div>
+      <div class="hud-menu">
+        <span class="hmenu-btn" onclick="openMenu('spell')">法術</span>
+        <span class="hmenu-btn" onclick="openMenu('item')">物品</span>
+      </div>
+      <div class="hud-menu">
+        <span class="hmenu-btn" onclick="openMenu('status')">狀態</span>
+      </div>
+    </div>
+    <div class="hud-panel">
+      <div class="hud-gold">金：<span id="gval">500</span></div>
+    </div>
+    <div class="hud-panel" style="margin-top:2px">
+      <div style="color:#88ffcc;font-size:9px;font-weight:700;margin-bottom:2px">💾 存檔</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        <span class="hmenu-btn" onclick="exportSave()">匯出</span>
+        <span class="hmenu-btn" onclick="importSave()">匯入</span>
+        <span class="hmenu-btn" onclick="quickSave()">快存</span>
+        <span class="hmenu-btn" onclick="confirmNew()" style="color:#ff8888">新檔</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM HUD: 體力 法力 狀況 / 名字+HP+MP -->
+  <div id="hud-bot">
+    <div id="hud-bot-left">
+      <span class="hud-stat-lbl" onclick="openMenu('item')">體力</span>
+      <span class="hud-stat-lbl" onclick="openMenu('spell')">法力</span>
+      <span class="hud-stat-lbl" onclick="openMenu('status')">狀況</span>
+    </div>
+    <div id="hud-bot-right" id="hud-bot-right">
+      <!-- rendered by JS -->
+    </div>
+  </div>
+
+  <!-- DIALOG BOX -->
+  <div id="dialog" onclick="advanceDialog()">
+    <div id="dialog-name"></div>
+    <div id="dialog-text"></div>
+    <div id="dialog-choices"></div>
+    <div id="dialog-prompt">▼ 點擊繼續</div>
+  </div>
+
+  <!-- BATTLE -->
+  <div id="battle">
+    <div id="bt-bg">
+      <div id="bt-enemies"></div>
+      <div id="bt-party"></div>
+    </div>
+    <div id="bt-status"></div>
+    <div id="bt-log"></div>
+    <div id="bt-cmds">
+      <button class="btcmd" onclick="bCmd('attack')"><span class="btcmd-icon">⚔️</span>攻擊</button>
+      <button class="btcmd" onclick="bCmd('magic')"><span class="btcmd-icon">✨</span>魔法</button>
+      <button class="btcmd" onclick="bCmd('item')"><span class="btcmd-icon">🎒</span>道具</button>
+      <button class="btcmd" onclick="bCmd('flee')"><span class="btcmd-icon">🏃</span>逃跑</button>
+    </div>
+  </div>
+
+  <!-- POPUP MENU -->
+  <div id="popup">
+    <div class="popup-title" id="popup-title">物品</div>
+    <div class="popup-scroll" id="popup-body"></div>
+    <div class="popup-close" onclick="closePopup()">✕ 關閉</div>
+  </div>
+
+  <!-- TITLE SCREEN -->
+  <div id="title-screen">
+    <div class="ts-logo">⚔️ 失落的封印 ⚔️</div>
+    <div class="ts-sub">EMOJI 復刻版 · 大宇 1993</div>
+    <div class="ts-btns">
+      <button class="ts-btn" onclick="startGame(false)">🎮 開始遊戲</button>
+      <button class="ts-btn" onclick="importSave()">📥 讀取存檔</button>
+    </div>
+    <div class="ts-desc">
+      滑鼠點擊地圖移動角色<br>
+      點擊 NPC 進行對話<br>
+      點擊寶箱拾取物品
+    </div>
+  </div><!-- /title-screen -->
+
+</div><!-- /game -->
+
+<!-- VIRTUAL JOYSTICK outside #game to avoid overflow:hidden clipping -->
+<div id="joystick-wrap">
+  <div id="joystick-base">
+    <div id="joystick-arrows">
+      <span class="ja ja-up">▲</span>
+      <span class="ja ja-down">▼</span>
+      <span class="ja ja-left">◀</span>
+      <span class="ja ja-right">▶</span>
+    </div>
+    <div id="joystick-stick"></div>
+  </div>
+</div>
+
+</div><!-- /shell -->
+
+<div id="notif"></div>
+<input type="file" id="file-input" accept=".json" style="display:none" onchange="loadFile(event)">
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  CONSTANTS & TILE SYSTEM
+// ══════════════════════════════════════════════════════════
+const TW = 40; // tile size px
+// Tile IDs
+const T = {
+  GRASS:0, TREE:1, WATER:2, PATH:3,
+  FLOOR:4, WALL:5, HOUSE:6, WELL:7,
+  FLOWER:8, BUSH:9, CASTLE:10, STONE:11,
+  SAND:12, LAVA:13, CAVE:14, DARK:15,
+};
+
+// How each tile renders on canvas
+const TILE_DEF = {
+  [T.GRASS]:  {base:'#3a6b2a',top:null,block:false},
+  [T.TREE]:   {base:'#1e4010',top:'🌲',block:true},
+  [T.WATER]:  {base:'#1a3a6a',top:'🌊',block:true},
+  [T.PATH]:   {base:'#7a6040',top:null,block:false},
+  [T.FLOOR]:  {base:'#8a7040',top:null,block:false},
+  [T.WALL]:   {base:'#4a3820',top:'🧱',block:true},
+  [T.HOUSE]:  {base:'#6a5030',top:'🏠',block:true},
+  [T.WELL]:   {base:'#5a4020',top:'⛲',block:true},
+  [T.FLOWER]: {base:'#3a6b2a',top:'🌸',block:false},
+  [T.BUSH]:   {base:'#2a5a1a',top:'🌿',block:false},
+  [T.CASTLE]: {base:'#5a5060',top:'🏰',block:true},
+  [T.STONE]:  {base:'#5a5040',top:'⛰️',block:true},
+  [T.SAND]:   {base:'#a08040',top:null,block:false},
+  [T.LAVA]:   {base:'#6a2010',top:'🔥',block:false},
+  [T.CAVE]:   {base:'#2a2030',top:null,block:false},
+  [T.DARK]:   {base:'#0a080f',top:null,block:false},
+};
+
+// ══════════════════════════════════════════════════════════
+//  MAP DATA
+// ══════════════════════════════════════════════════════════
+// Each map: id, name, w, h, tiles, objects(npcs/chests/exits), enemies, spawnRate
+// G=GRASS P=PATH F=FLOOR W=WALL H=HOUSE T=TREE K=WATER B=BUSH FL=FLOWER S=STONE
+const G_=T.GRASS,P_=T.PATH,F_=T.FLOOR,WL=T.WALL,H_=T.HOUSE,
+      TR=T.TREE, WA=T.WATER,BU=T.BUSH, FL=T.FLOWER,ST=T.STONE,
+      CA=T.CASTLE,WE=T.WELL,SD=T.SAND,LV=T.LAVA,CV=T.CAVE,DK=T.DARK;
+
+const MAPS = {
+
+// ─── 濱海小村 ───────────────────────────────────────
+beach:{
+  id:'beach',name:'濱海小村',
+  w:18,h:16,
+  tiles:[
+    [TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,BU,G_,G_,H_,H_,G_,G_,H_,H_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,H_,H_,G_,G_,H_,H_,G_,G_,WA,WA,G_,TR],
+    [TR,G_,G_,G_,G_,P_,P_,P_,P_,P_,P_,P_,G_,G_,WA,WA,G_,TR],
+    [TR,G_,H_,H_,G_,P_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,H_,H_,G_,P_,G_,G_,WE,G_,G_,P_,G_,FL,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,P_,P_,P_,P_,P_,P_,P_,G_,G_,BU,G_,G_,TR],
+    [TR,G_,BU,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,H_,H_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,H_,H_,G_,G_,G_,G_,G_,BU,G_,TR],
+    [TR,G_,G_,FL,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,TR,TR,TR,TR,TR,TR,TR,P_,TR,TR,TR,TR,TR,TR,TR,TR,TR],
+  ],
+  objects:[
+    {type:'npc',x:10,y:2,emoji:'👴',name:'村長葛倫',
+     dialog:['迪克亞王城被魔怪封印了！','必須先前往羅河鎮打探消息。','出了村子往南走就到了。']},
+    {type:'npc',x:6,y:2,emoji:'👩',name:'村民',
+     dialog:['聽說礦坑裡有一顆威加水晶...','那東西好像能解除王城的封印？']},
+    {type:'npc',x:9,y:6,emoji:'🐕',name:'澤澤',
+     dialog:['汪汪！（澤澤開心地搖著尾巴）','🐾 澤澤找到了！']},
+    {type:'npc',x:8,y:10,emoji:'👦',name:'村童',
+     dialog:['哥哥！我在這裡！','羅河鎮的魔導師很厲害喔！']},
+    {type:'chest',x:3,y:12,item:'herb',qty:2},
+    {type:'chest',x:15,y:9,item:'antidote',qty:1},
+    {type:'exit',x:8,y:15,toMap:'rohe',toX:8,toY:1,label:'↓ 往羅河鎮'},
+  ],
+  enemies:[
+    {name:'泥怪',emoji:'🟤',hp:30,atk:8,def:3,exp:15,gold:10},
+    {name:'野狼',emoji:'🐺',hp:25,atk:10,def:2,exp:12,gold:8},
+  ],
+  spawnRate:0.18,
+},
+
+// ─── 羅河鎮 ───────────────────────────────────────
+rohe:{
+  id:'rohe',name:'羅河鎮',
+  w:20,h:18,
+  tiles:[
+    [TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,H_,H_,G_,G_,H_,H_,G_,G_,G_,H_,H_,G_,G_,G_,G_,WA,WA,TR],
+    [TR,G_,H_,H_,G_,G_,H_,H_,G_,G_,G_,H_,H_,G_,G_,G_,WA,WA,WA,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,WA,WA,WA,G_,TR],
+    [TR,G_,G_,G_,P_,P_,P_,P_,P_,P_,P_,P_,P_,G_,G_,WA,WA,G_,G_,TR],
+    [TR,G_,BU,G_,P_,G_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,P_,G_,H_,H_,G_,G_,H_,H_,P_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,P_,G_,H_,H_,G_,G_,H_,H_,P_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,P_,P_,P_,P_,P_,P_,P_,P_,P_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,H_,H_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,H_,H_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,TR,TR,TR,TR,TR,TR,TR,P_,TR,TR,TR,TR,TR,TR,TR,P_,TR,TR,TR],
+  ],
+  objects:[
+    {type:'npc',x:7,y:7,emoji:'🧙',name:'萊德',joinId:'ryde',
+     dialog:['我是魔導師葛路夫的徒弟！','我叫萊德，讓我加入你的旅途！','一起去找威加水晶吧！']},
+    {type:'npc',x:11,y:7,emoji:'🧓',name:'魔導師葛路夫',
+     dialog:['要解除王城的封印，必須有威加水晶。','水晶在迪克亞港南方的礦坑裡。','小心索多那個魔頭！']},
+    {type:'npc',x:2,y:2,emoji:'🏪',name:'道具店',isShop:true,
+     shopKey:'rohe'},
+    {type:'npc',x:12,y:2,emoji:'🏠',name:'旅館',isInn:true},
+    {type:'npc',x:3,y:12,emoji:'👧',name:'村民',
+     dialog:['索多最近在那克村的尖塔附近出沒...','快去打倒他！']},
+    {type:'chest',x:17,y:11,item:'mpgrass',qty:2},
+    {type:'chest',x:17,y:14,item:'recover',qty:1},
+    {type:'exit',x:8,y:17,toMap:'beach',toX:8,toY:14,label:'↑ 回濱海小村'},
+    {type:'exit',x:16,y:17,toMap:'nake',toX:5,toY:1,label:'↓ 往那克村'},
+  ],
+  enemies:[
+    {name:'哥布林',emoji:'👺',hp:45,atk:12,def:5,exp:25,gold:18},
+    {name:'骷髏兵',emoji:'💀',hp:50,atk:14,def:6,exp:30,gold:22},
+  ],
+  spawnRate:0.20,
+},
+
+// ─── 那克村 ───────────────────────────────────────
+nake:{
+  id:'nake',name:'那克村',
+  w:20,h:18,
+  tiles:[
+    [TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,H_,H_,G_,G_,G_,WL,WL,WL,WL,WL,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,H_,H_,G_,G_,G_,WL,CV,CV,CV,WL,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,WL,CV,ST,CV,WL,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,WL,CV,CV,CV,WL,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,BU,G_,G_,G_,G_,WL,WL,P_,WL,WL,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,BU,G_,G_,TR],
+    [TR,G_,G_,G_,P_,P_,P_,P_,P_,P_,P_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,H_,H_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,H_,H_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,TR,TR,TR,TR,P_,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR],
+  ],
+  objects:[
+    {type:'npc',x:9,y:3,emoji:'😈',name:'魔頭索多',isBoss:true,bossKey:'sodo',
+     dialog:['哈哈哈！你居然來了！','威力水晶是我的！準備受死！'],
+     enemies:[{name:'魔頭索多',emoji:'😈',hp:150,atk:22,def:10,exp:120,gold:50,boss:true}]},
+    {type:'npc',x:2,y:2,emoji:'👩',name:'村民',
+     dialog:['尖塔在北邊...','索多那個壞蛋跑進去了！']},
+    {type:'npc',x:2,y:11,emoji:'🏪',name:'道具店',isShop:true,shopKey:'nake'},
+    {type:'chest',x:14,y:3,item:'recover',qty:2},
+    {type:'chest',x:18,y:13,item:'antidote',qty:2},
+    {type:'chest',x:18,y:7,item:'moongrass',qty:1},
+    {type:'exit',x:4,y:17,toMap:'rohe',toX:16,toY:16,label:'↑ 回羅河鎮'},
+    {type:'exit',x:4,y:0,toMap:'dkcity',toX:9,toY:14,label:'↑ 往迪克亞王城'},
+  ],
+  enemies:[
+    {name:'骷髏兵',emoji:'💀',hp:55,atk:16,def:7,exp:35,gold:25},
+    {name:'魔族爪牙',emoji:'👿',hp:48,atk:18,def:6,exp:32,gold:20},
+  ],
+  spawnRate:0.22,
+},
+
+// ─── 迪克亞王城 ───────────────────────────────────────
+dkcity:{
+  id:'dkcity',name:'迪克亞王城',
+  w:20,h:18,
+  tiles:[
+    [CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA],
+    [CA,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,CA],
+    [CA,F_,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,F_,CA],
+    [CA,F_,WL,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,H_,H_,F_,F_,F_,F_,F_,F_,H_,H_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,H_,H_,F_,F_,F_,F_,F_,F_,H_,H_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,F_,F_,F_,WL,WL,F_,F_,WL,WL,F_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,F_,F_,F_,WL,F_,F_,F_,F_,WL,F_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,F_,F_,F_,WL,F_,ST,F_,F_,WL,F_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,F_,F_,F_,WL,WL,P_,WL,WL,WL,F_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,F_,F_,F_,F_,F_,P_,F_,F_,F_,F_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,H_,H_,F_,F_,F_,P_,F_,F_,F_,H_,H_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,H_,H_,F_,F_,F_,P_,F_,F_,F_,H_,H_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,WL,WL,WL,WL,WL,WL,P_,WL,WL,WL,WL,WL,WL,WL,WL,F_,CA],
+    [CA,F_,F_,F_,F_,F_,F_,F_,F_,P_,F_,F_,F_,F_,F_,F_,F_,F_,F_,CA],
+    [CA,F_,F_,F_,F_,F_,F_,F_,F_,P_,F_,F_,F_,F_,F_,F_,F_,F_,F_,CA],
+    [CA,CA,CA,CA,CA,CA,CA,CA,CA,P_,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA],
+  ],
+  objects:[
+    {type:'npc',x:9,y:9,emoji:'👑',name:'迪克亞國王',
+     dialog:['年輕人，你解除了封印！','你的身世之謎... 必須前往摩色頓王國才能揭曉。','我派船送你到沙連王國！前往沙那港吧。']},
+    {type:'npc',x:4,y:4,emoji:'🏪',name:'道具店',isShop:true,shopKey:'dkcity'},
+    {type:'npc',x:13,y:4,emoji:'🏠',name:'王城旅館',isInn:true},
+    {type:'npc',x:4,y:12,emoji:'⚔️',name:'王城衛兵',
+     dialog:['陛下在王城深處等候！','穿越王城往前走。']},
+    {type:'npc',x:14,y:12,emoji:'⚓',name:'船夫',
+     dialog:['我隨時可以送你去沙連王國！','要出發了嗎？'],
+     choices:[
+       {text:'⚓ 出發！',action:'travel',toMap:'shaport',toX:8,toY:14},
+       {text:'還沒準備好',action:'close'},
+     ]},
+    {type:'chest',x:16,y:12,item:'lightgrass',qty:1},
+    {type:'exit',x:9,y:17,toMap:'nake',toX:4,toY:16,label:'↓ 往那克村'},
+  ],
+  enemies:[
+    {name:'魔族士兵',emoji:'🧟',hp:60,atk:18,def:8,exp:40,gold:30},
+  ],
+  spawnRate:0.15,
+},
+
+// ─── 沙那港 ───────────────────────────────────────
+shaport:{
+  id:'shaport',name:'沙那港（沙連王國）',
+  w:18,h:16,
+  tiles:[
+    [TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,H_,H_,G_,G_,H_,H_,G_,G_,G_,G_,WA,WA,WA,WA,G_,TR],
+    [TR,G_,H_,H_,G_,G_,H_,H_,G_,G_,G_,WA,WA,WA,WA,WA,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,WA,WA,WA,WA,WA,WA,G_,TR],
+    [TR,G_,P_,P_,P_,P_,P_,P_,P_,G_,WA,WA,WA,WA,WA,G_,G_,TR],
+    [TR,G_,P_,G_,G_,G_,G_,G_,P_,G_,G_,WA,WA,WA,G_,G_,G_,TR],
+    [TR,G_,P_,G_,H_,H_,G_,G_,P_,G_,G_,G_,WA,G_,G_,G_,G_,TR],
+    [TR,G_,P_,G_,H_,H_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,P_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,P_,P_,P_,P_,P_,P_,P_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,TR,TR,TR,TR,TR,TR,TR,P_,TR,TR,TR,TR,TR,TR,TR,TR,TR],
+  ],
+  objects:[
+    {type:'npc',x:2,y:2,emoji:'🏪',name:'道具店',isShop:true,shopKey:'shaport'},
+    {type:'npc',x:7,y:2,emoji:'🏠',name:'旅館',isInn:true},
+    {type:'npc',x:4,y:7,emoji:'⛵',name:'漁夫',
+     dialog:['歡迎來到沙連王國！','卡爾村往南走就到了，','那裡有個生病的女孩...']},
+    {type:'chest',x:16,y:5,item:'recover',qty:2},
+    {type:'exit',x:8,y:15,toMap:'carl',toX:8,toY:1,label:'↓ 往卡爾村'},
+  ],
+  enemies:[
+    {name:'海盜',emoji:'🏴‍☠️',hp:55,atk:15,def:7,exp:35,gold:25},
+  ],
+  spawnRate:0.18,
+},
+
+// ─── 卡爾村 ───────────────────────────────────────
+carl:{
+  id:'carl',name:'卡爾村',
+  w:18,h:16,
+  tiles:[
+    [TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,H_,H_,G_,G_,H_,H_,G_,G_,H_,H_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,H_,H_,G_,G_,H_,H_,G_,G_,H_,H_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,BU,G_,G_,TR],
+    [TR,G_,G_,P_,P_,P_,P_,P_,P_,P_,P_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,P_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,P_,G_,H_,H_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,P_,G_,H_,H_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,P_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,P_,P_,P_,P_,P_,P_,P_,P_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,TR,TR,TR,TR,TR,TR,TR,P_,TR,TR,TR,TR,TR,TR,TR,TR,TR],
+  ],
+  objects:[
+    {type:'npc',x:6,y:7,emoji:'👸',name:'蒂莉亞',joinId:'tiria',
+     dialog:['謝謝你帶來奇異草，我已經痊癒了！','我叫蒂莉亞，讓我加入你的旅途！','我有前往王城的通行證！']},
+    {type:'npc',x:2,y:2,emoji:'🏪',name:'道具店',isShop:true,shopKey:'carl'},
+    {type:'npc',x:7,y:2,emoji:'🏠',name:'旅館',isInn:true},
+    {type:'npc',x:11,y:2,emoji:'🙏',name:'修女',
+     dialog:['感謝你救了蒂莉亞小姐！','奇異草的藥效真是神奇！']},
+    {type:'chest',x:15,y:3,item:'antidote',qty:3},
+    {type:'chest',x:15,y:11,item:'recover',qty:2},
+    {type:'exit',x:8,y:15,toMap:'shaport',toX:8,toY:14,label:'↑ 回沙那港'},
+    {type:'exit',x:8,y:0,toMap:'slcity',toX:9,toY:14,label:'↑ 往沙連王城'},
+  ],
+  enemies:[
+    {name:'毒蘑菇',emoji:'🍄',hp:40,atk:10,def:4,exp:20,gold:15},
+    {name:'沙蟲',emoji:'🐛',hp:35,atk:12,def:3,exp:18,gold:12},
+  ],
+  spawnRate:0.18,
+},
+
+// ─── 沙連王城 ───────────────────────────────────────
+slcity:{
+  id:'slcity',name:'沙連王城',
+  w:20,h:18,
+  tiles:[
+    [CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA],
+    [CA,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,CA],
+    [CA,F_,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,F_,CA],
+    [CA,F_,WL,F_,H_,H_,F_,F_,F_,F_,F_,F_,F_,H_,H_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,H_,H_,F_,F_,F_,F_,F_,F_,F_,H_,H_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,F_,F_,F_,WL,WL,WL,P_,WL,WL,F_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,F_,F_,F_,WL,F_,F_,P_,F_,WL,F_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,F_,F_,F_,WL,F_,ST,P_,F_,WL,F_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,F_,F_,F_,WL,F_,F_,P_,F_,WL,F_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,F_,F_,F_,WL,WL,WL,P_,WL,WL,F_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,F_,F_,F_,F_,F_,F_,P_,F_,F_,F_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,H_,H_,F_,F_,F_,F_,P_,F_,F_,H_,H_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,H_,H_,F_,F_,F_,F_,P_,F_,F_,H_,H_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,WL,WL,WL,WL,WL,WL,WL,P_,WL,WL,WL,WL,WL,WL,WL,F_,CA],
+    [CA,F_,F_,F_,F_,F_,F_,F_,F_,F_,P_,F_,F_,F_,F_,F_,F_,F_,F_,CA],
+    [CA,F_,F_,F_,F_,F_,F_,F_,F_,F_,P_,F_,F_,F_,F_,F_,F_,F_,F_,CA],
+    [CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,P_,CA,CA,CA,CA,CA,CA,CA,CA,CA],
+  ],
+  objects:[
+    {type:'npc',x:10,y:8,emoji:'👾',name:'真吉拉斯',isBoss:true,bossKey:'jiras',
+     dialog:['哈哈哈！你來救人嗎？','先打敗我再說！'],
+     enemies:[
+       {name:'假吉拉斯',emoji:'👾',hp:200,atk:30,def:15,exp:200,gold:0,boss:true},
+       {name:'真吉拉斯',emoji:'🦹',hp:300,atk:38,def:18,exp:350,gold:0,boss:true},
+     ]},
+    {type:'npc',x:4,y:3,emoji:'🏪',name:'道具店',isShop:true,shopKey:'slcity'},
+    {type:'npc',x:14,y:3,emoji:'🏠',name:'王城旅館',isInn:true},
+    {type:'npc',x:4,y:12,emoji:'⛪',name:'神殿',
+     dialog:['火之封印保管於此！','願神明護佑你們！']},
+    {type:'npc',x:14,y:12,emoji:'🏪',name:'武器店',isShop:true,shopKey:'slcity_weapon'},
+    {type:'chest',x:18,y:11,item:'lightgrass',qty:2},
+    {type:'chest',x:1,y:11,item:'wings',qty:1},
+    {type:'exit',x:10,y:17,toMap:'carl',toX:8,toY:1,label:'↓ 回卡爾村'},
+    {type:'exit',x:10,y:0,toMap:'balcity',toX:9,toY:14,label:'↑ 往巴爾王城'},
+  ],
+  enemies:[
+    {name:'惡靈',emoji:'👻',hp:70,atk:20,def:9,exp:50,gold:35},
+    {name:'海妖',emoji:'🧜',hp:65,atk:18,def:8,exp:45,gold:30},
+  ],
+  spawnRate:0.22,
+},
+
+// ─── 巴爾王城 ───────────────────────────────────────
+balcity:{
+  id:'balcity',name:'巴爾王城',
+  w:20,h:18,
+  tiles:[
+    [CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA],
+    [CA,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,CA],
+    [CA,F_,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,F_,CA],
+    [CA,F_,WL,F_,H_,H_,F_,F_,F_,F_,F_,F_,H_,H_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,H_,H_,F_,F_,F_,F_,F_,F_,H_,H_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,F_,F_,P_,P_,P_,P_,P_,P_,P_,F_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,F_,F_,P_,F_,F_,F_,F_,F_,P_,F_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,F_,F_,P_,F_,ST,F_,F_,F_,P_,F_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,F_,F_,P_,F_,F_,F_,F_,F_,P_,F_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,F_,F_,P_,P_,P_,P_,P_,P_,P_,F_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,F_,F_,F_,F_,F_,P_,F_,F_,F_,F_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,H_,H_,F_,F_,F_,P_,F_,F_,H_,H_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,F_,H_,H_,F_,F_,F_,P_,F_,F_,H_,H_,F_,F_,F_,WL,F_,CA],
+    [CA,F_,WL,WL,WL,WL,WL,WL,WL,P_,WL,WL,WL,WL,WL,WL,WL,WL,F_,CA],
+    [CA,F_,F_,F_,F_,F_,F_,F_,F_,P_,F_,F_,F_,F_,F_,F_,F_,F_,F_,CA],
+    [CA,F_,F_,F_,F_,F_,F_,F_,F_,P_,F_,F_,F_,F_,F_,F_,F_,F_,F_,CA],
+    [CA,CA,CA,CA,CA,CA,CA,CA,CA,P_,CA,CA,CA,CA,CA,CA,CA,CA,CA,CA],
+  ],
+  objects:[
+    {type:'npc',x:9,y:8,emoji:'👑',name:'巴爾國王',
+     dialog:['蒂莉亞是我們巴爾國的公主！','風之封印遺失在費諾村的貝利塔裡，','去找回來！']},
+    {type:'npc',x:4,y:3,emoji:'🏪',name:'道具店',isShop:true,shopKey:'balcity'},
+    {type:'npc',x:13,y:3,emoji:'🏠',name:'旅館',isInn:true},
+    {type:'npc',x:4,y:12,emoji:'❄️',name:'冰女',isBoss:true,bossKey:'icequeen',
+     dialog:['哈哈哈！這風封印永遠是我的！','你想拿走它？做夢！'],
+     enemies:[{name:'冰女',emoji:'❄️',hp:350,atk:45,def:20,exp:500,gold:200,boss:true}]},
+    {type:'npc',x:14,y:12,emoji:'🏪',name:'武器店',isShop:true,shopKey:'balcity_weapon'},
+    {type:'chest',x:18,y:3,item:'crystalSword',qty:1},
+    {type:'chest',x:1,y:3,item:'miracle',qty:1},
+    {type:'exit',x:9,y:17,toMap:'slcity',toX:10,toY:1,label:'↓ 回沙連王城'},
+    {type:'exit',x:9,y:0,toMap:'mscity',toX:9,toY:14,label:'↑ 往最終決戰'},
+  ],
+  enemies:[
+    {name:'地精',emoji:'🧌',hp:80,atk:22,def:10,exp:60,gold:40},
+    {name:'雪狼',emoji:'🐺',hp:90,atk:25,def:12,exp:70,gold:45},
+    {name:'冰霜妖',emoji:'🌨️',hp:100,atk:28,def:14,exp:80,gold:50},
+  ],
+  spawnRate:0.28,
+},
+
+// ─── 摩色頓王城（最終） ───────────────────────────────────────
+mscity:{
+  id:'mscity',name:'摩色頓王城・最終決戰',
+  w:20,h:18,
+  tiles:[
+    [DK,DK,DK,DK,DK,DK,DK,DK,DK,DK,DK,DK,DK,DK,DK,DK,DK,DK,DK,DK],
+    [DK,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,DK],
+    [DK,CV,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,WL,CV,DK],
+    [DK,CV,WL,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,WL,CV,DK],
+    [DK,CV,WL,CV,WL,WL,CV,CV,CV,CV,CV,CV,CV,WL,WL,CV,CV,WL,CV,DK],
+    [DK,CV,WL,CV,WL,CV,CV,CV,CV,CV,CV,CV,CV,CV,WL,CV,CV,WL,CV,DK],
+    [DK,CV,WL,CV,WL,CV,P_,P_,P_,P_,P_,P_,CV,CV,WL,CV,CV,WL,CV,DK],
+    [DK,CV,WL,CV,WL,CV,P_,CV,CV,CV,CV,P_,CV,CV,WL,CV,CV,WL,CV,DK],
+    [DK,CV,WL,CV,WL,CV,P_,CV,ST,CV,CV,P_,CV,CV,WL,CV,CV,WL,CV,DK],
+    [DK,CV,WL,CV,WL,CV,P_,CV,CV,CV,CV,P_,CV,CV,WL,CV,CV,WL,CV,DK],
+    [DK,CV,WL,CV,WL,WL,P_,P_,P_,P_,P_,P_,CV,WL,WL,CV,CV,WL,CV,DK],
+    [DK,CV,WL,CV,CV,CV,CV,CV,CV,P_,CV,CV,CV,CV,CV,CV,CV,WL,CV,DK],
+    [DK,CV,WL,CV,WL,WL,CV,CV,CV,P_,CV,CV,WL,WL,CV,CV,CV,WL,CV,DK],
+    [DK,CV,WL,CV,WL,CV,CV,CV,CV,P_,CV,CV,CV,WL,CV,CV,CV,WL,CV,DK],
+    [DK,CV,WL,WL,WL,WL,WL,WL,WL,P_,WL,WL,WL,WL,WL,WL,WL,WL,CV,DK],
+    [DK,CV,CV,CV,CV,CV,CV,CV,CV,P_,CV,CV,CV,CV,CV,CV,CV,CV,CV,DK],
+    [DK,CV,CV,CV,CV,CV,CV,CV,CV,P_,CV,CV,CV,CV,CV,CV,CV,CV,CV,DK],
+    [DK,DK,DK,DK,DK,DK,DK,DK,DK,P_,DK,DK,DK,DK,DK,DK,DK,DK,DK,DK],
+  ],
+  objects:[
+    {type:'npc',x:9,y:8,emoji:'💀',name:'大魔王',isBoss:true,bossKey:'demonking',
+     dialog:['哈哈哈！摩色頓王子！','你終於來了！準備好迎接末日了嗎！'],
+     enemies:[
+       {name:'雷狄亞',emoji:'⚡',hp:1500,atk:90,def:45,exp:5000,gold:0,boss:true},
+       {name:'大魔王',emoji:'🦹‍♂️',hp:3000,atk:120,def:60,exp:9999,gold:0,boss:true},
+     ]},
+    {type:'npc',x:4,y:4,emoji:'🏪',name:'最終道具店',isShop:true,shopKey:'mscity'},
+    {type:'npc',x:14,y:4,emoji:'🏠',name:'聖地旅館',isInn:true},
+    {type:'npc',x:4,y:12,emoji:'🧙',name:'維多斯大臣',
+     dialog:['王子！六國聯軍已在黑暗大陸集結！','打敗大魔王！恢復和平！']},
+    {type:'npc',x:14,y:12,emoji:'👸',name:'蒂莉亞',
+     dialog:['亞特南斯，我相信你！','為了六個王國的和平，加油！']},
+    {type:'chest',x:18,y:11,item:'miracle',qty:5},
+    {type:'chest',x:1,y:11,item:'revive',qty:3},
+    {type:'chest',x:18,y:5,item:'heroSword',qty:1},
+    {type:'exit',x:9,y:17,toMap:'balcity',toX:9,toY:1,label:'↓ 回巴爾王城'},
+  ],
+  enemies:[
+    {name:'魔族精英',emoji:'💂',hp:200,atk:55,def:28,exp:200,gold:100},
+    {name:'死靈法師',emoji:'💀',hp:180,atk:65,def:20,exp:220,gold:110},
+  ],
+  spawnRate:0.22,
+},
+};
+
+// ══════════════════════════════════════════════════════════
+//  ITEMS & SHOP
+// ══════════════════════════════════════════════════════════
+const ITEMS = {
+  herb:        {name:'藥草',      emoji:'🌿',type:'heal',hp:30,mp:0,    price:20},
+  recover:     {name:'恢復劑',    emoji:'🧪',type:'heal',hp:80,mp:0,    price:60},
+  mpgrass:     {name:'星之草',    emoji:'⭐',type:'heal',hp:0, mp:15,   price:30},
+  moongrass:   {name:'月之草',    emoji:'🌙',type:'heal',hp:0, mp:40,   price:80},
+  lightgrass:  {name:'光之草',    emoji:'💫',type:'heal',hp:100,mp:50,  price:150},
+  dewgrass:    {name:'露之草',    emoji:'💧',type:'heal',hp:9999,mp:0,  price:200},
+  miracle:     {name:'奇蹟之草',  emoji:'🌈',type:'heal',hp:9999,mp:9999,price:500},
+  antidote:    {name:'解毒草',    emoji:'🍃',type:'cure', price:25},
+  wings:       {name:'飛馬翼',    emoji:'🦋',type:'special',price:50},
+  save:        {name:'神秘果',    emoji:'🍑',type:'save', price:100},
+  revive:      {name:'還魂鏡',    emoji:'🪞',type:'revive',hp:40,price:300},
+  shortSword:  {name:'短劍',      emoji:'🗡️',type:'weapon',atk:5, price:80},
+  ironSword:   {name:'鐵劍',      emoji:'⚔️',type:'weapon',atk:14,price:200},
+  steelSword:  {name:'鋼劍',      emoji:'🔪',type:'weapon',atk:24,price:450},
+  crystalSword:{name:'水晶劍',    emoji:'💎',type:'weapon',atk:36,price:900},
+  heroSword:   {name:'英雄之劍',  emoji:'🏅',type:'weapon',atk:55,price:2000},
+  demonSword:  {name:'惡魔之劍',  emoji:'😈',type:'weapon',atk:75,price:0},
+  cloth:       {name:'布衣',      emoji:'👘',type:'armor', def:3, price:60},
+  ironArmor:   {name:'鐵甲',      emoji:'🛡️',type:'armor', def:12,price:250},
+  steelArmor:  {name:'鋼甲',      emoji:'⚙️',type:'armor', def:20,price:600},
+  knightArmor: {name:'騎士甲',    emoji:'🦺',type:'armor', def:32,price:1500},
+  ironShield:  {name:'鐵盾',      emoji:'🔰',type:'shield',def:8, price:150},
+  steelShield: {name:'鋼盾',      emoji:'💠',type:'shield',def:16,price:400},
+  royalShield: {name:'王家之盾',  emoji:'🛡️',type:'shield',def:28,price:1200},
+  boots:       {name:'皮靴',      emoji:'👢',type:'boots', spd:2, price:80},
+  windBoots:   {name:'風之鞋',    emoji:'💨',type:'boots', spd:6, price:300},
+  flyBoots:    {name:'飛翔之鞋',  emoji:'🪁',type:'boots', spd:12,price:800},
+};
+
+const SHOPS = {
+  beach:           ['herb','recover','antidote','cloth','shortSword','ironShield','boots'],
+  rohe:            ['herb','recover','mpgrass','antidote','ironSword','ironArmor','ironShield','boots'],
+  nake:            ['recover','mpgrass','moongrass','antidote','ironSword','steelSword','ironArmor'],
+  dkcity:          ['recover','moongrass','lightgrass','steelSword','steelArmor','steelShield','windBoots','wings'],
+  shaport:         ['recover','mpgrass','antidote','ironSword','ironArmor','ironShield','boots'],
+  carl:            ['recover','antidote','steelSword','ironArmor','steelShield','windBoots'],
+  slcity:          ['recover','lightgrass','moongrass','antidote','steelSword','steelArmor','steelShield','windBoots','revive','wings'],
+  slcity_weapon:   ['crystalSword','knightArmor','royalShield','flyBoots'],
+  balcity:         ['recover','lightgrass','miracle','antidote','crystalSword','steelArmor','steelShield','windBoots','revive'],
+  balcity_weapon:  ['heroSword','knightArmor','royalShield','flyBoots'],
+  mscity:          ['recover','lightgrass','miracle','dewgrass','antidote','heroSword','knightArmor','royalShield','flyBoots','revive','save'],
+};
+
+const SPELLS = [
+  {name:'炎彈',   emoji:'🔥',type:'atk',power:25, mp:8},
+  {name:'灼炎術', emoji:'🌋',type:'atk',power:50, mp:15},
+  {name:'暴炎術', emoji:'☄️', type:'atk',power:80, mp:25},
+  {name:'火神龍', emoji:'🐉',type:'atk',power:120,mp:40,all:true},
+  {name:'凍氣',   emoji:'❄️',type:'atk',power:28, mp:8},
+  {name:'凍結術', emoji:'🧊',type:'atk',power:58, mp:16},
+  {name:'冰柱',   emoji:'💎',type:'atk',power:88, mp:28},
+  {name:'冰之神', emoji:'☃️',type:'atk',power:135,mp:45,all:true},
+  {name:'雷擊',   emoji:'⚡',type:'atk',power:32, mp:10},
+  {name:'落雷',   emoji:'🌩️',type:'atk',power:62, mp:18},
+  {name:'狂雷',   emoji:'🌪️',type:'atk',power:98, mp:32},
+  {name:'雷之神', emoji:'🌠',type:'atk',power:145,mp:50,all:true},
+  {name:'米依',   emoji:'💚',type:'heal',power:40, mp:6},
+  {name:'格米依', emoji:'💗',type:'heal',power:150,mp:18},
+  {name:'希格米依',emoji:'💝',type:'heal',power:150,mp:30,all:true},
+  {name:'路格米依',emoji:'🌟',type:'heal',power:9999,mp:45},
+  {name:'亞那法拉',emoji:'🕯️',type:'revive',power:40,mp:25},
+  {name:'魯那法拉',emoji:'✨',type:'revive',power:9999,mp:60},
+];
+
+// ══════════════════════════════════════════════════════════
+//  GAME STATE
+// ══════════════════════════════════════════════════════════
+let G = null;
+function defaultState(){
+  return {
+    v:4,
+    mapId:'beach', px:8.5, py:7,
+    gold:500,
+    party:[{
+      id:'atenas',name:'亞特南斯',emoji:'🧑‍🦱',role:'戰士',
+      lv:1,exp:0,expNext:100,
+      hp:80,maxHp:80,mp:20,maxMp:20,
+      atk:15,def:10,spd:8,luk:5,
+      weapon:'shortSword',armor:'cloth',shield:null,boots:'boots',status:null,
+      spells:['炎彈','米依'],
+    }],
+    inv:{herb:3,mpgrass:2,antidote:2},
+    visitedMaps:['beach'],
+    defeatedBosses:[],
+    chestsTaken:{},
+    battle:null,
+  };
+}
+
+// ══════════════════════════════════════════════════════════
+//  CANVAS SETUP
+// ══════════════════════════════════════════════════════════
+const canvas = document.getElementById('gc');
+const ctx = canvas.getContext('2d');
+let CAM = {x:0, y:0};
+let moveTarget = null;
+let movePath = [];
+let moveAnim = null;
+let playerAnim = 0; // 0-3 walk cycle
+let lastMoveTime = 0;
+let facingDir = 'down'; // up/down/left/right
+
+function sizeGame(){
+  const shell = document.getElementById('shell');
+  const sw = shell.clientWidth, sh = shell.clientHeight;
+  // maintain 4:3 ish, max 840×630
+  let gw = Math.min(sw, 840);
+  let gh = Math.min(sh, 630);
+  // snap to tile size
+  const tilesW = Math.floor(gw/TW);
+  const tilesH = Math.floor(gh/TW);
+  gw = tilesW * TW;
+  gh = tilesH * TW;
+  const game = document.getElementById('game');
+  game.style.width = gw+'px';
+  game.style.height = gh+'px';
+  canvas.width = gw;
+  canvas.height = gh;
+  // adjust HUDs
+  document.getElementById('hud-bot').style.width = gw+'px';
+}
+
+// ══════════════════════════════════════════════════════════
+//  RENDERING
+// ══════════════════════════════════════════════════════════
+function updateCam(){
+  const vpW = canvas.width / TW;
+  const vpH = canvas.height / TW;
+  const map = MAPS[G.mapId];
+  CAM.x = Math.max(0, Math.min(G.px - vpW/2, map.w - vpW));
+  CAM.y = Math.max(0, Math.min(G.py - vpH/2, map.h - vpH));
+  if(isNaN(CAM.x)) CAM.x=0;
+  if(isNaN(CAM.y)) CAM.y=0;
+}
+
+function tileToScreen(tx,ty){
+  return { sx:(tx-CAM.x)*TW, sy:(ty-CAM.y)*TW };
+}
+
+let frameId = null;
+function startLoop(){ if(frameId) return; loop(); }
+function loop(){
+  frameId = requestAnimationFrame(loop);
+  stepMove();
+  render();
+}
+
+function render(){
+  if(!G) return;
+  updateCam();
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const map = MAPS[G.mapId];
+
+  // TILES
+  const startX = Math.max(0, Math.floor(CAM.x));
+  const startY = Math.max(0, Math.floor(CAM.y));
+  const endX = Math.min(map.w, startX + Math.ceil(canvas.width/TW)+2);
+  const endY = Math.min(map.h, startY + Math.ceil(canvas.height/TW)+2);
+
+  for(let ty=startY; ty<endY; ty++){
+    for(let tx=startX; tx<endX; tx++){
+      const tid = map.tiles[ty]?.[tx] ?? T.GRASS;
+      const td = TILE_DEF[tid];
+      const {sx,sy} = tileToScreen(tx,ty);
+      // base fill
+      ctx.fillStyle = td.base;
+      ctx.fillRect(sx,sy,TW,TW);
+      // subtle grid
+      ctx.strokeStyle='rgba(0,0,0,0.12)';
+      ctx.strokeRect(sx+0.5,sy+0.5,TW-1,TW-1);
+    }
+  }
+  // TILE EMOJIS (second pass, above grid)
+  ctx.font = `${TW*0.72}px serif`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  for(let ty=startY; ty<endY; ty++){
+    for(let tx=startX; tx<endX; tx++){
+      const tid = map.tiles[ty]?.[tx] ?? T.GRASS;
+      const td = TILE_DEF[tid];
+      if(!td.top) continue;
+      const {sx,sy} = tileToScreen(tx,ty);
+      ctx.fillText(td.top, sx+TW/2, sy+TW/2);
+    }
+  }
+
+  // MOVE TARGET indicator
+  if(moveTarget){
+    const {sx,sy} = tileToScreen(moveTarget.x, moveTarget.y);
+    ctx.strokeStyle='rgba(255,255,68,0.6)';
+    ctx.lineWidth=2;
+    ctx.strokeRect(sx+3,sy+3,TW-6,TW-6);
+    ctx.lineWidth=1;
+  }
+
+  // OBJECTS
+  drawObjects(map, startX, startY, endX, endY);
+
+  // PLAYER (drawn on top)
+  drawPlayer();
+}
+
+function drawObjects(map, sx,sy,ex,ey){
+  ctx.textAlign='center'; ctx.textBaseline='bottom';
+  (map.objects||[]).forEach((obj,i)=>{
+    if(obj.type==='exit'){
+      const {sx:os,sy:os2} = tileToScreen(obj.x,obj.y);
+      // glowing exit tile
+      ctx.fillStyle='rgba(68,255,170,0.12)';
+      ctx.fillRect(os,os2,TW,TW);
+      ctx.strokeStyle='rgba(68,255,170,0.5)';
+      ctx.lineWidth=1.5;
+      ctx.strokeRect(os+1,os2+1,TW-2,TW-2);
+      ctx.lineWidth=1;
+      ctx.font=`${TW*0.5}px serif`;
+      ctx.textBaseline='middle';
+      ctx.fillText('🚪',os+TW/2,os2+TW/2);
+      // label
+      ctx.fillStyle='rgba(68,255,170,0.9)';
+      ctx.font="10px 'Noto Sans TC'";
+      ctx.textBaseline='bottom';
+      ctx.fillText(obj.label||'出口', os+TW/2, os2-1);
+      return;
+    }
+    if(obj.type==='chest'){
+      const key=`${G.mapId}_${i}`;
+      if(G.chestsTaken[key]) return;
+      const {sx:os,sy:os2}=tileToScreen(obj.x,obj.y);
+      // glowing chest
+      ctx.shadowColor='rgba(255,220,0,0.6)';
+      ctx.shadowBlur=8;
+      ctx.font=`${TW*0.65}px serif`;
+      ctx.textBaseline='middle';
+      ctx.fillText('📦',os+TW/2,os2+TW/2);
+      ctx.shadowBlur=0;
+      return;
+    }
+    if(obj.type==='npc'){
+      const bossDefeated = obj.bossKey && G.defeatedBosses.includes(obj.bossKey);
+      if(bossDefeated) return;
+      const partyJoined = obj.joinId && G.party.find(p=>p.id===obj.joinId);
+      if(partyJoined) return;
+      const {sx:os,sy:os2}=tileToScreen(obj.x,obj.y);
+      // shadow ellipse
+      ctx.fillStyle='rgba(0,0,0,0.25)';
+      ctx.beginPath();
+      ctx.ellipse(os+TW/2, os2+TW-5, TW*0.28,4,0,0,Math.PI*2);
+      ctx.fill();
+      // sprite
+      ctx.font=`${TW*0.72}px serif`;
+      ctx.textBaseline='bottom';
+      ctx.fillText(obj.emoji, os+TW/2, os2+TW-3);
+      // boss crown
+      if(obj.isBoss && !G.defeatedBosses.includes(obj.bossKey)){
+        ctx.font=`${TW*0.38}px serif`;
+        ctx.fillText('👑', os+TW/2, os2+5);
+      }
+      // name tag
+      const nm = obj.name;
+      ctx.font="9px 'Noto Sans TC'";
+      const tw=ctx.measureText(nm).width;
+      ctx.fillStyle='rgba(0,0,0,0.65)';
+      ctx.fillRect(os+TW/2-tw/2-2, os2-14, tw+4, 12);
+      ctx.fillStyle = obj.isBoss?'#ff8888':'#ffdd44';
+      ctx.textBaseline='bottom';
+      ctx.fillText(nm, os+TW/2, os2-3);
+    }
+  });
+}
+
+function drawPlayer(){
+  const {sx,sy} = tileToScreen(G.px, G.py);
+  const hero = G.party[0];
+
+  // shadow
+  ctx.fillStyle='rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(sx+TW/2, sy+TW-4, TW*0.28,4,0,0,Math.PI*2);
+  ctx.fill();
+
+  // glow
+  const hpPct = hero.hp/hero.maxHp;
+  const glowC = hpPct>0.5?'rgba(68,255,170,0.35)':hpPct>0.25?'rgba(255,200,68,0.35)':'rgba(255,68,68,0.35)';
+  ctx.shadowColor = glowC;
+  ctx.shadowBlur = 12;
+
+  // hero sprite
+  ctx.font = `${TW*0.78}px serif`;
+  ctx.textAlign='center';
+  ctx.textBaseline='bottom';
+  ctx.fillText(hero.emoji, sx+TW/2, sy+TW-2);
+  ctx.shadowBlur=0;
+
+  // HP bar above
+  const bw = TW-6;
+  ctx.fillStyle='rgba(0,0,0,0.6)';
+  ctx.fillRect(sx+3, sy+2, bw, 5);
+  ctx.fillStyle = hpPct>0.5?'#4f4':hpPct>0.25?'#fc4':'#f44';
+  ctx.fillRect(sx+3, sy+2, bw*hpPct, 5);
+}
+
+// ══════════════════════════════════════════════════════════
+//  PATHFINDING (simple BFS)
+// ══════════════════════════════════════════════════════════
+function findPath(sx,sy,ex,ey){
+  const map = MAPS[G.mapId];
+  const sx0=Math.round(sx), sy0=Math.round(sy);
+  const ex0=Math.round(ex), ey0=Math.round(ey);
+  if(sx0===ex0&&sy0===ey0) return [];
+  if(isBlocked(map,ex0,ey0)) return [];
+
+  const queue = [[sx0,sy0,[]]], visited=new Set();
+  visited.add(`${sx0},${sy0}`);
+  const dirs=[[0,-1],[0,1],[-1,0],[1,0]];
+  while(queue.length){
+    const [cx,cy,path]=queue.shift();
+    for(const [dx,dy] of dirs){
+      const nx=cx+dx, ny=cy+dy;
+      const k=`${nx},${ny}`;
+      if(visited.has(k)) continue;
+      if(nx<0||ny<0||nx>=map.w||ny>=map.h) continue;
+      if(isBlocked(map,nx,ny)) continue;
+      visited.add(k);
+      const np=[...path,[nx,ny]];
+      if(nx===ex0&&ny===ey0) return np;
+      queue.push([nx,ny,np]);
+      if(np.length>60) continue; // limit path length
+    }
+  }
+  return [];
+}
+
+function isBlocked(map,tx,ty){
+  const tid = map.tiles[ty]?.[tx];
+  if(tid===undefined) return true;
+  return TILE_DEF[tid]?.block===true;
+}
+
+function stepMove(){
+  if(!movePath.length) return;
+  const now = performance.now();
+  if(now - lastMoveTime < 90) return; // speed
+  lastMoveTime = now;
+  const [nx,ny] = movePath.shift();
+  const dx=nx-G.px, dy=ny-G.py;
+  if(dx<0) facingDir='left';
+  else if(dx>0) facingDir='right';
+  else if(dy<0) facingDir='up';
+  else facingDir='down';
+  G.px=nx; G.py=ny;
+  playerAnim=(playerAnim+1)%4;
+  if(!movePath.length){
+    moveTarget=null;
+    onArrival();
+  }
+  // random encounter
+  if(Math.random()<(MAPS[G.mapId]?.spawnRate||0.2)/10){
+    movePath=[];moveTarget=null;
+    triggerEncounter(MAPS[G.mapId].enemies);
+  }
+}
+
+function onArrival(){
+  const map = MAPS[G.mapId];
+  const px=Math.round(G.px), py=Math.round(G.py);
+
+  // exit?
+  for(const obj of (map.objects||[])){
+    if(obj.type==='exit' && obj.x===px && obj.y===py){
+      travelToMap(obj.toMap,obj.toX,obj.toY);
+      return;
+    }
+  }
+  // chest?
+  (map.objects||[]).forEach((obj,i)=>{
+    if(obj.type==='chest' && obj.x===px && obj.y===py){
+      const key=`${G.mapId}_${i}`;
+      if(!G.chestsTaken[key]){
+        G.chestsTaken[key]=true;
+        G.inv[obj.item]=(G.inv[obj.item]||0)+obj.qty;
+        const it=ITEMS[obj.item];
+        showDialog('📦 寶箱',`獲得了 ${it?.emoji||''} ${it?.name||obj.item} × ${obj.qty}！`,[]);
+        notify(`📦 ${it?.emoji}${it?.name} ×${obj.qty}`);
+        renderHudBot();
+      }
+    }
+  });
+  // npc adjacent?
+  (map.objects||[]).forEach(obj=>{
+    if(obj.type!=='npc') return;
+    const bossDefeated=obj.bossKey&&G.defeatedBosses.includes(obj.bossKey);
+    if(bossDefeated) return;
+    const partyJoined=obj.joinId&&G.party.find(p=>p.id===obj.joinId);
+    if(partyJoined) return;
+    const dist=Math.abs(obj.x-px)+Math.abs(obj.y-py);
+    if(dist<=1) talkNPC(obj);
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+//  CLICK HANDLING
+// ══════════════════════════════════════════════════════════
+canvas.addEventListener('click', e=>{
+  if(G.battle) return;
+  if(isDialogOpen()) return;
+  const rect=canvas.getBoundingClientRect();
+  const cx=(e.clientX-rect.left)/1;
+  const cy=(e.clientY-rect.top)/1;
+  const tx=Math.floor(cx/TW+CAM.x);
+  const ty=Math.floor(cy/TW+CAM.y);
+  const map=MAPS[G.mapId];
+  if(tx<0||ty<0||tx>=map.w||ty>=map.h) return;
+
+  // show click marker
+  const marker=document.createElement('div');
+  marker.className='click-marker';
+  marker.style.left=cx+'px'; marker.style.top=cy+'px';
+  canvas.parentElement.appendChild(marker);
+  setTimeout(()=>marker.remove(),500);
+
+  // check if clicked an NPC directly
+  for(const obj of (map.objects||[])){
+    if(obj.type==='npc'&&obj.x===tx&&obj.y===ty){
+      const bossDefeated=obj.bossKey&&G.defeatedBosses.includes(obj.bossKey);
+      if(bossDefeated) return;
+      const partyJoined=obj.joinId&&G.party.find(p=>p.id===obj.joinId);
+      if(partyJoined) return;
+      // walk adjacent
+      const path=findPath(G.px,G.py,tx,ty-1)||findPath(G.px,G.py,tx-1,ty)||findPath(G.px,G.py,tx+1,ty)||findPath(G.px,G.py,tx,ty+1);
+      movePath=path||[];
+      moveTarget={x:tx,y:ty};
+      // also queue direct talk after path
+      if(!path||!path.length) talkNPC(obj);
+      return;
+    }
+  }
+  // check chest
+  for(let i=0;i<(map.objects||[]).length;i++){
+    const obj=map.objects[i];
+    if(obj.type==='chest'&&obj.x===tx&&obj.y===ty){
+      const key=`${G.mapId}_${i}`;
+      if(!G.chestsTaken[key]){
+        movePath=findPath(G.px,G.py,tx,ty)||[];
+        moveTarget={x:tx,y:ty};
+        return;
+      }
+    }
+  }
+
+  // walk to tile
+  const tid=map.tiles[ty]?.[tx];
+  if(TILE_DEF[tid]?.block) return;
+  const path=findPath(G.px,G.py,tx,ty);
+  if(path.length) { movePath=path; moveTarget={x:tx,y:ty}; }
+});
+
+// ══════════════════════════════════════════════════════════
+//  TRAVEL
+// ══════════════════════════════════════════════════════════
+function travelToMap(mapId,toX,toY){
+  if(!MAPS[mapId]) return;
+  movePath=[];moveTarget=null;
+  G.mapId=mapId; G.px=toX; G.py=toY;
+  if(!G.visitedMaps.includes(mapId)) G.visitedMaps.push(mapId);
+  notify(`📍 ${MAPS[mapId].name}`);
+  renderHudBot();
+}
+
+// ══════════════════════════════════════════════════════════
+//  DIALOG
+// ══════════════════════════════════════════════════════════
+let dialogQueue=[];
+let dialogChoices=[];
+let dialogCallback=null;
+
+function isDialogOpen(){ 
+  return document.getElementById('dialog').style.display === 'block';
+}
+
+function showDialog(name, text, choices, cb){
+  movePath=[];moveTarget=null;
+  const dlg=document.getElementById('dialog');
+  document.getElementById('dialog-name').textContent=name;
+  document.getElementById('dialog-text').textContent=text;
+  const choiceEl=document.getElementById('dialog-choices');
+  choiceEl.innerHTML='';
+  document.getElementById('dialog-prompt').style.display = choices&&choices.length?'none':'block';
+  if(choices&&choices.length){
+    choices.forEach(ch=>{
+      const btn=document.createElement('button');
+      btn.className='dchoice';
+      btn.textContent=ch.text;
+      btn.onclick=()=>{ closeDialog(); if(ch.action==='travel') travelToMap(ch.toMap,ch.toX,ch.toY); if(ch.action==='close') {} if(cb) cb(ch); };
+      choiceEl.appendChild(btn);
+    });
+  }
+  dlg.style.display='block';
+  dialogCallback=cb||null;
+}
+
+function advanceDialog(){
+  if(dialogChoices&&dialogChoices.length) return; // wait for choice
+  closeDialog();
+}
+function closeDialog(){
+  document.getElementById('dialog').style.display='none';
+  dialogCallback=null;
+}
+
+function talkNPC(obj){
+  if(obj.isShop){ openPopup('shop',obj.shopKey); return; }
+  if(obj.isInn){ doInn(); return; }
+  const lines=obj.dialog||['...'];
+  let idx=0;
+  function next(){
+    if(idx>=lines.length){
+      // post-dialog actions
+      if(obj.joinId&&!G.party.find(p=>p.id===obj.joinId)){
+        addMember(obj.joinId);
+        closeDialog();
+        return;
+      }
+      if(obj.isBoss&&!G.defeatedBosses.includes(obj.bossKey)){
+        closeDialog();
+        triggerEncounter(obj.enemies,obj.bossKey);
+        return;
+      }
+      if(obj.choices&&obj.choices.length){
+        showDialog(obj.name, '', obj.choices);
+        return;
+      }
+      closeDialog();
+      return;
+    }
+    showDialog(obj.name||'???', lines[idx++], [], next);
+  }
+  next();
+}
+
+function doInn(){
+  G.party.forEach(h=>{ h.hp=h.maxHp; h.mp=h.maxMp; h.status=null; });
+  showDialog('🏠 旅館','歡迎！你的隊伍已完全恢復了！',[],null);
+  notify('🏠 全體回復！');
+  renderHudBot();
+}
+
+// ══════════════════════════════════════════════════════════
+//  PARTY MEMBERS
+// ══════════════════════════════════════════════════════════
+const PARTY_TEMPLATES={
+  ryde:{id:'ryde',name:'萊德',emoji:'🧙',role:'魔導師',
+    lv:3,exp:0,expNext:200,hp:65,maxHp:65,mp:80,maxMp:80,
+    atk:10,def:8,spd:10,luk:9,weapon:null,armor:'cloth',shield:null,boots:'boots',status:null,
+    spells:['炎彈','灼炎術','凍氣','米依','格米依']},
+  tiria:{id:'tiria',name:'蒂莉亞',emoji:'👸',role:'公主',
+    lv:5,exp:0,expNext:400,hp:90,maxHp:90,mp:100,maxMp:100,
+    atk:12,def:10,spd:13,luk:14,weapon:null,armor:'cloth',shield:null,boots:'boots',status:null,
+    spells:['灼炎術','凍結術','格米依','希格米依','亞那法拉']},
+};
+function addMember(id){
+  const t=PARTY_TEMPLATES[id]; if(!t) return;
+  G.party.push({...t});
+  showDialog('✨ 加入隊伍',`${t.emoji} ${t.name} 加入了你的隊伍！`,[],null);
+  notify(`✨ ${t.name} 加入！`);
+  renderHudBot();
+}
+
+// ══════════════════════════════════════════════════════════
+//  BATTLE
+// ══════════════════════════════════════════════════════════
+function triggerEncounter(enemyTemplates, bossKey){
+  if(!enemyTemplates||!enemyTemplates.length) return;
+  const enemies=enemyTemplates.map(e=>({...e,curHp:e.hp,maxHp:e.hp,uid:Math.random().toString(36)}));
+  G.battle={enemies,bossKey:bossKey||null,log:[]};
+  renderBattle();
+  document.getElementById('battle').classList.add('active');
+  blg('sys',`⚔️ ${enemies.map(e=>e.emoji+e.name).join('、')} 出現了！`);
+}
+
+function renderBattle(){
+  const bs=G.battle; if(!bs) return;
+  // enemies
+  const row=document.getElementById('bt-enemies');
+  row.innerHTML='';
+  bs.enemies.forEach((e,i)=>{
+    const d=document.createElement('div');
+    d.className='bt-enemy'+(e.curHp<=0?' dead':'');
+    const hpPct=Math.max(0,e.curHp/e.maxHp*100);
+    d.innerHTML=`${e.boss?'<div class="be-boss-crown">👑</div>':''}<div class="be-sprite">${e.emoji}</div><div class="be-name">${e.name}</div><div class="be-hpbar"><div class="be-hpfill" style="width:${hpPct}%"></div></div>`;
+    d.onclick=()=>{ if(e.curHp>0) playerAttack(i); };
+    row.appendChild(d);
+  });
+  // party
+  const prow=document.getElementById('bt-party');
+  prow.innerHTML='';
+  G.party.forEach(h=>{
+    const d=document.createElement('div');
+    d.className='bt-hero';
+    d.innerHTML=`<div class="bh-sprite" style="opacity:${h.hp<=0?0.3:1}">${h.emoji}</div><div class="bh-name">${h.name}</div>`;
+    prow.appendChild(d);
+  });
+  // status bars
+  const st=document.getElementById('bt-status');
+  st.innerHTML='';
+  G.party.forEach(h=>{
+    const hpP=Math.max(0,h.hp/h.maxHp*100);
+    const mpP=Math.max(0,h.mp/h.maxMp*100);
+    const d=document.createElement('div');
+    d.className='bts-hero';
+    d.innerHTML=`<div class="bts-name">${h.emoji} ${h.name} Lv.${h.lv}</div>
+    <div class="bts-bar-row"><span class="bts-lbl">HP</span><div class="bts-bg"><div class="bts-fill bts-hp" style="width:${hpP}%"></div></div><span class="bts-val">${h.hp}/${h.maxHp}</span></div>
+    <div class="bts-bar-row"><span class="bts-lbl">MP</span><div class="bts-bg"><div class="bts-fill bts-mp" style="width:${mpP}%"></div></div><span class="bts-val">${h.mp}/${h.maxMp}</span></div>`;
+    st.appendChild(d);
+  });
+}
+
+function bCmd(action){
+  if(!G.battle) return;
+  if(action==='attack'){
+    const idx=G.battle.enemies.findIndex(e=>e.curHp>0);
+    if(idx<0) return;
+    playerAttack(idx);
+  } else if(action==='magic'){
+    // pick strongest spell
+    const hero=G.party.find(h=>h.hp>0);
+    const known=hero?.spells||[];
+    const atkSp=SPELLS.filter(s=>known.includes(s.name)&&s.type==='atk').sort((a,b)=>b.power-a.power);
+    if(!atkSp.length){ blg('sys','無攻擊魔法！'); return; }
+    const sp=atkSp[0];
+    if(hero.mp<sp.mp){ blg('sys',`${hero.name} MP不足！`); return; }
+    hero.mp-=sp.mp;
+    const targets=sp.all?G.battle.enemies.filter(e=>e.curHp>0):[G.battle.enemies.find(e=>e.curHp>0)].filter(Boolean);
+    targets.forEach(en=>{
+      const dmg=calcD(sp.power,en.def*0.3);
+      en.curHp=Math.max(0,en.curHp-dmg);
+      blg('dmg',`${sp.emoji}${sp.name}：${en.emoji}${en.name} -${dmg}HP`);
+      showDmgFloat(dmg,'#88ccff');
+      if(en.curHp<=0) blg('die',`💥 ${en.emoji}${en.name} 倒下！`);
+    });
+    checkWin();
+    renderBattle();
+  } else if(action==='item'){
+    const usable=Object.keys(G.inv).find(k=>G.inv[k]>0&&ITEMS[k]?.type==='heal');
+    if(!usable){ blg('sys','無可用道具！'); return; }
+    doUseItem(usable);
+  } else if(action==='flee'){
+    if(G.battle.bossKey){ blg('sys','⛔ BOSS戰不可逃！'); return; }
+    if(Math.random()<0.55){ blg('sys','🏃 逃跑成功！'); endBattle(); }
+    else { blg('sys','😰 逃跑失敗！'); enemyTurn(); }
+  }
+}
+
+function playerAttack(idx){
+  const hero=G.party.find(h=>h.hp>0); if(!hero) return;
+  const en=G.battle.enemies[idx]; if(!en||en.curHp<=0) return;
+  const dmg=calcD(totalAtk(hero),en.def);
+  en.curHp=Math.max(0,en.curHp-dmg);
+  blg('dmg',`⚔️ ${hero.name} → ${en.emoji}${en.name}: -${dmg}HP`);
+  showDmgFloat(dmg,'#ff9999');
+  if(en.curHp<=0) blg('die',`💥 ${en.emoji}${en.name} 倒下！`);
+  checkWin();
+  if(G.battle) enemyTurn();
+  renderBattle();
+}
+
+function enemyTurn(){
+  if(!G.battle) return;
+  const alive=G.party.filter(h=>h.hp>0);
+  G.battle.enemies.filter(e=>e.curHp>0).forEach(en=>{
+    const target=alive[Math.floor(Math.random()*alive.length)];
+    if(!target) return;
+    const dmg=calcD(en.atk,totalDef(target));
+    target.hp=Math.max(0,target.hp-dmg);
+    blg('dmg',`${en.emoji}${en.name} → ${target.name}: -${dmg}HP`);
+    showDmgFloat(dmg,'#ffaa88');
+    if(target.hp<=0){ blg('die',`💀 ${target.name} 倒下！`); target.status='陣亡'; }
+  });
+  if(G.party.every(h=>h.hp<=0)){
+    blg('sys','☠️ 全滅...HP少量回復，繼續戰鬥！');
+    G.party.forEach(h=>{ h.hp=Math.floor(h.maxHp*0.15)+1; h.status=null; });
+    endBattle();
+  }
+  renderBattle();
+  renderHudBot();
+}
+
+function checkWin(){
+  if(!G.battle) return;
+  if(G.battle.enemies.every(e=>e.curHp<=0)){
+    const exp=G.battle.enemies.reduce((s,e)=>s+e.exp,0);
+    const gold=G.battle.enemies.reduce((s,e)=>s+(e.gold||0),0);
+    G.gold+=gold;
+    blg('sys',`🏆 勝利！+${exp}EXP +${gold}G`);
+    G.party.filter(h=>h.hp>0).forEach(h=>{ h.exp+=exp; while(h.exp>=h.expNext) doLevelUp(h); });
+    if(G.battle.bossKey) G.defeatedBosses.push(G.battle.bossKey);
+    // drop
+    if(Math.random()<0.45){
+      const drops=['herb','mpgrass','recover','antidote'];
+      const d=drops[Math.floor(Math.random()*drops.length)];
+      G.inv[d]=(G.inv[d]||0)+1;
+      blg('heal',`✨ 掉落：${ITEMS[d]?.emoji}${ITEMS[d]?.name}`);
+    }
+    setTimeout(endBattle,800);
+  }
+}
+
+function endBattle(){
+  G.battle=null;
+  document.getElementById('battle').classList.remove('active');
+  renderHudBot();
+}
+
+function doLevelUp(h){
+  h.exp-=h.expNext;
+  h.lv++;
+  h.expNext=Math.floor(h.expNext*1.6);
+  const hup=12+Math.floor(Math.random()*8);
+  const mup=5+Math.floor(Math.random()*5);
+  h.maxHp+=hup; h.hp=h.maxHp; h.maxMp+=mup; h.mp=h.maxMp;
+  h.atk+=3; h.def+=2; h.spd++;
+  blg('sys',`🌟 ${h.name} 升至 Lv.${h.lv}！HP+${hup} MP+${mup}`);
+  const learn={3:'灼炎術',5:'凍氣',7:'雷擊',10:'暴炎術',12:'格米依',15:'冰柱',18:'狂雷',20:'希格米依',25:'火神龍',30:'冰之神',35:'雷之神',40:'路格米依',45:'亞那法拉',50:'魯那法拉'};
+  if(learn[h.lv]&&!h.spells.includes(learn[h.lv])){
+    h.spells.push(learn[h.lv]);
+    blg('sys',`✨ ${h.name} 學會【${learn[h.lv]}】！`);
+  }
+}
+
+function calcD(atk,def){ return Math.max(1,Math.floor(atk-def*0.5+(Math.random()-0.5)*10)); }
+function totalAtk(h){ return h.atk+(ITEMS[h.weapon]?.atk||0); }
+function totalDef(h){ return h.def+(ITEMS[h.armor]?.def||0)+(ITEMS[h.shield]?.def||0); }
+
+function blg(type,msg){
+  const el=document.getElementById('bt-log');
+  const p=document.createElement('p');
+  p.className='bl-'+type; p.textContent=msg;
+  el.appendChild(p);
+  el.scrollTop=el.scrollHeight;
+  while(el.children.length>40) el.removeChild(el.firstChild);
+}
+
+function showDmgFloat(dmg,color){
+  const el=document.createElement('div');
+  el.className='dmgfloat';
+  el.textContent='-'+dmg;
+  el.style.color=color;
+  el.style.left=(20+Math.random()*60)+'%';
+  el.style.top=(20+Math.random()*40)+'%';
+  document.getElementById('battle').appendChild(el);
+  setTimeout(()=>el.remove(),950);
+}
+
+// ══════════════════════════════════════════════════════════
+//  POPUP MENUS (裝備/法術/物品/狀態)
+// ══════════════════════════════════════════════════════════
+function openMenu(type){
+  if(type==='item') openPopup('item');
+  else if(type==='spell') openPopup('spell');
+  else if(type==='equip') openPopup('equip');
+  else if(type==='status') openPopup('status');
+}
+function openPopup(type, shopKey){
+  const popup=document.getElementById('popup');
+  const title=document.getElementById('popup-title');
+  const body=document.getElementById('popup-body');
+  body.innerHTML='';
+  popup.classList.add('active');
+
+  if(type==='item'){
+    title.textContent='🎒 物品';
+    const keys=Object.keys(G.inv).filter(k=>G.inv[k]>0);
+    if(!keys.length){ body.innerHTML='<div class="popup-item">（道具欄空空如也）</div>'; return; }
+    keys.forEach(k=>{
+      const it=ITEMS[k]; if(!it) return;
+      const d=document.createElement('div');
+      d.className='popup-item';
+      d.innerHTML=`<span class="pi-emoji">${it.emoji}</span><span>${it.name}</span><span class="pi-sub">×${G.inv[k]}</span>`;
+      d.onclick=()=>{ doUseItem(k); closePopup(); };
+      body.appendChild(d);
+    });
+  } else if(type==='spell'){
+    title.textContent='✨ 法術';
+    const known=new Set(G.party.flatMap(h=>h.spells||[]));
+    SPELLS.forEach(sp=>{
+      const has=known.has(sp.name);
+      const d=document.createElement('div');
+      d.className='popup-item';
+      d.style.opacity=has?'1':'0.35';
+      d.innerHTML=`<span class="pi-emoji">${sp.emoji}</span><span>${sp.name}</span><span class="pi-sub">MP:${sp.mp}</span>`;
+      if(has) d.onclick=()=>{ doUseSpell(sp); closePopup(); };
+      body.appendChild(d);
+    });
+  } else if(type==='equip'){
+    title.textContent='⚔️ 裝備';
+    const hero=G.party[0];
+    const slots=['weapon','armor','shield','boots'];
+    const labels={weapon:'武器',armor:'防具',shield:'盾',boots:'鞋'};
+    slots.forEach(slot=>{
+      const eq=hero[slot];
+      const it=eq?ITEMS[eq]:null;
+      const d=document.createElement('div');
+      d.className='popup-item';
+      d.innerHTML=`<span class="pi-emoji">${it?.emoji||'　'}</span><span>${labels[slot]}：${it?.name||'無'}</span>`;
+      body.appendChild(d);
+    });
+    // list equippable items
+    const d2=document.createElement('div');
+    d2.className='popup-item';
+    d2.style.color='#ffdd44';
+    d2.textContent='── 更換裝備 ──';
+    body.appendChild(d2);
+    Object.keys(G.inv).filter(k=>G.inv[k]>0).forEach(k=>{
+      const it=ITEMS[k];
+      if(!it||!['weapon','armor','shield','boots'].includes(it.type)) return;
+      const d=document.createElement('div');
+      d.className='popup-item';
+      d.innerHTML=`<span class="pi-emoji">${it.emoji}</span><span>${it.name}</span><span class="pi-sub">裝備</span>`;
+      d.onclick=()=>{ hero[it.type]=k; notify(`裝備 ${it.emoji}${it.name}！`); closePopup(); renderHudBot(); };
+      body.appendChild(d);
+    });
+  } else if(type==='status'){
+    title.textContent='📊 狀態';
+    G.party.forEach(h=>{
+      const d=document.createElement('div');
+      d.className='popup-item';
+      d.style.flexDirection='column';
+      d.style.alignItems='flex-start';
+      d.style.gap='2px';
+      d.innerHTML=`<div style="font-size:12px;color:#fff">${h.emoji} ${h.name} ${h.role} Lv.${h.lv}</div>
+        <div style="font-size:10px;color:#aaa">HP ${h.hp}/${h.maxHp} &nbsp; MP ${h.mp}/${h.maxMp}</div>
+        <div style="font-size:10px;color:#aaa">ATK:${totalAtk(h)} DEF:${totalDef(h)} SPD:${h.spd} EXP:${h.exp}/${h.expNext}</div>
+        <div style="font-size:10px;color:#aaa">法術：${h.spells?.join('・')||'無'}</div>`;
+      body.appendChild(d);
+    });
+  } else if(type==='shop'){
+    const key=shopKey||G.mapId;
+    title.textContent=`🏪 商店（💰${G.gold}G）`;
+    const list=SHOPS[key]||[];
+    if(!list.length){ body.innerHTML='<div class="popup-item">（無商品）</div>'; return; }
+    list.forEach(k=>{
+      const it=ITEMS[k]; if(!it) return;
+      const canAfford=G.gold>=it.price;
+      const d=document.createElement('div');
+      d.className='popup-item';
+      d.style.opacity=canAfford?'1':'0.4';
+      d.innerHTML=`<span class="pi-emoji">${it.emoji}</span><span>${it.name}</span><span class="pi-sub">💰${it.price}G</span>`;
+      if(canAfford) d.onclick=()=>{ doBuy(k); };
+      body.appendChild(d);
+    });
+  }
+  // position popup near HUD top-left
+  popup.style.top='120px';
+  popup.style.left='4px';
+}
+
+function closePopup(){
+  document.getElementById('popup').classList.remove('active');
+}
+
+function doBuy(key){
+  const it=ITEMS[key]; if(!it) return;
+  if(G.gold<it.price){ notify('💰 金幣不足！'); return; }
+  G.gold-=it.price;
+  if(['weapon','armor','shield','boots'].includes(it.type)){
+    G.party[0][it.type]=key;
+    notify(`裝備了 ${it.emoji}${it.name}！`);
+  } else {
+    G.inv[key]=(G.inv[key]||0)+1;
+    notify(`購入 ${it.emoji}${it.name}！`);
+  }
+  document.getElementById('gval').textContent=G.gold.toLocaleString();
+  renderHudBot();
+  openPopup('shop'); // refresh
+}
+
+function doUseItem(key){
+  const it=ITEMS[key]; if(!it||!G.inv[key]) return;
+  const hero=G.party.find(h=>h.hp>0)||G.party[0];
+  if(it.type==='heal'){
+    if(it.cure){ hero.status=null; notify(`🍃 ${hero.name} 解毒！`); }
+    else{
+      const hg=Math.min(it.hp||0,hero.maxHp-hero.hp);
+      const mg=Math.min(it.mp||0,hero.maxMp-hero.mp);
+      hero.hp+=hg; hero.mp+=mg;
+      notify(`${it.emoji} HP+${hg} MP+${mg}`);
+      if(G.battle) blg('heal',`${it.emoji}${hero.name} HP+${hg} MP+${mg}`);
+    }
+  } else if(it.type==='revive'){
+    const dead=G.party.find(h=>h.hp<=0);
+    if(!dead){ notify('無人倒下！'); return; }
+    dead.hp=it.hp; dead.status=null;
+    notify(`🪞 ${dead.name} 復活！`);
+    if(G.battle) blg('heal',`${dead.name} 復活！`);
+  } else if(it.type==='save'){ quickSave(); }
+  else notify(`使用了 ${it.emoji}${it.name}`);
+  G.inv[key]--;
+  if(G.inv[key]<=0) delete G.inv[key];
+  if(G.battle){ enemyTurn(); renderBattle(); }
+  renderHudBot();
+  document.getElementById('gval').textContent=G.gold.toLocaleString();
+}
+
+function doUseSpell(sp){
+  const hero=G.party.find(h=>h.hp>0); if(!hero) return;
+  if(hero.mp<sp.mp){ notify('MP不足！'); return; }
+  if(sp.type==='atk'){ notify('⚔️ 戰鬥外無法使用攻擊魔法！'); return; }
+  hero.mp-=sp.mp;
+  if(sp.type==='heal'){
+    const ts=sp.all?G.party.filter(h=>h.hp>0):[hero];
+    ts.forEach(t=>{ t.hp=Math.min(t.maxHp,t.hp+sp.power); });
+    notify(`${sp.emoji} ${sp.name}！`);
+  } else if(sp.type==='revive'){
+    const dead=G.party.find(h=>h.hp<=0);
+    if(dead){ dead.hp=sp.power===9999?dead.maxHp:sp.power; dead.status=null; notify(`${sp.emoji} ${dead.name} 復活！`); }
+  }
+  renderHudBot();
+}
+
+// ══════════════════════════════════════════════════════════
+//  HUD
+// ══════════════════════════════════════════════════════════
+function renderHudBot(){
+  const el=document.getElementById('hud-bot-right');
+  el.innerHTML='';
+  G.party.forEach(h=>{
+    const d=document.createElement('div');
+    d.className='hero-info';
+    d.innerHTML=`<div class="hi-name">${h.emoji} ${h.name}</div>
+      <div class="hi-stat"><span>${h.hp}</span>/<span>${h.maxHp}</span></div>
+      <div class="hi-stat"><span style="color:#88aaff">${h.mp}</span>/<span style="color:#88aaff">${h.maxMp}</span></div>
+      <div class="hi-lv">${h.status||'健康'} L${h.lv}</div>`;
+    el.appendChild(d);
+  });
+  document.getElementById('gval').textContent=G.gold.toLocaleString();
+}
+
+// ══════════════════════════════════════════════════════════
+//  SAVE / LOAD
+// ══════════════════════════════════════════════════════════
+function exportSave(){
+  const b=new Blob([JSON.stringify(G,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);
+  a.download=`lostseal_${Date.now()}.json`;
+  a.click();
+  notify('📤 存檔匯出！');
+}
+function importSave(){ document.getElementById('file-input').click(); }
+function loadFile(e){
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      if(!d.party) throw 0;
+      G=d;
+      document.getElementById('title-screen').style.display='none';
+      renderHudBot(); startLoop();
+      notify('📥 存檔讀取！');
+    }catch{ notify('❌ 格式錯誤！'); }
+    e.target.value='';
+  };
+  r.readAsText(f);
+}
+function quickSave(){
+  try{ localStorage.setItem('ls_v4',JSON.stringify(G)); notify('⚡ 快存！'); }
+  catch(e){ notify('❌ 快存失敗'); }
+}
+function confirmNew(){
+  if(confirm('確定新遊戲？進度將消失！')){ G=defaultState(); renderHudBot(); notify('🎮 新遊戲！'); }
+}
+
+// ══════════════════════════════════════════════════════════
+//  NOTIFY
+// ══════════════════════════════════════════════════════════
+function notify(msg){
+  const el=document.createElement('div');
+  el.className='nmsg'; el.textContent=msg;
+  document.getElementById('notif').appendChild(el);
+  setTimeout(()=>el.remove(),2500);
+}
+
+// ══════════════════════════════════════════════════════════
+//  INIT / TITLE
+// ══════════════════════════════════════════════════════════
+function startGame(fromSave){
+  if(!fromSave) G=defaultState();
+  document.getElementById('title-screen').style.display='none';
+  sizeGame();
+  renderHudBot();
+  startLoop();
+  notify('🎮 點擊地圖移動！點擊NPC互動！');
+}
+
+window.addEventListener('resize',()=>{ sizeGame(); });
+sizeGame();
+
+// try quick load
+try{
+  const d=localStorage.getItem('ls_v4');
+  if(d){ G=JSON.parse(d); }
+  else { G=defaultState(); }
+}catch(e){ G=defaultState(); }
+
+// ══════════════════════════════════════════════════════════
+//  VIRTUAL JOYSTICK
+// ══════════════════════════════════════════════════════════
+{
+  const R = 33, DEAD = 10, INTERVAL = 160;
+  let pressing = false, ox = 0, oy = 0, dx = 0, dy = 0, tid = null;
+
+  const base  = document.getElementById('joystick-base');
+  const stick = document.getElementById('joystick-stick');
+
+  function updateStick(cx, cy){
+    let nx = cx - ox, ny = cy - oy;
+    const d = Math.sqrt(nx*nx+ny*ny);
+    if(d > R){ nx = nx/d*R; ny = ny/d*R; }
+    dx = nx; dy = ny;
+    // stick center at (55,55) in base; offset by nx,ny; then pull back by half stick size (22px)
+    stick.style.transform = `translate(calc(-50% + ${nx}px), calc(-50% + ${ny}px))`;
+  }
+
+  function tryMove(){
+    if(!pressing) return;
+    if(!G || G.battle || isDialogOpen()) return;
+    if(Math.sqrt(dx*dx+dy*dy) < DEAD) return;
+
+    let px = Math.round(G.px), py = Math.round(G.py);
+    let tx = px, ty = py;
+    if(Math.abs(dx) >= Math.abs(dy)) tx += dx > 0 ? 1 : -1;
+    else ty += dy > 0 ? 1 : -1;
+
+    const map = MAPS[G.mapId];
+    if(!map || tx<0||ty<0||tx>=map.w||ty>=map.h) return;
+    if(isBlocked(map,tx,ty)) return;
+
+    const ddx = tx-px, ddy = ty-py;
+    if(ddx < 0) facingDir='left';
+    else if(ddx > 0) facingDir='right';
+    else if(ddy < 0) facingDir='up';
+    else facingDir='down';
+
+    G.px = tx; G.py = ty;
+    movePath = []; moveTarget = null;
+    playerAnim = (playerAnim+1)%4;
+
+    if(Math.random() < (map.spawnRate||0.2)/10){
+      triggerEncounter(map.enemies);
+      stopJoy(); return;
+    }
+    onArrival();
+  }
+
+  function startJoy(cx, cy){
+    pressing = true;
+    stick.style.background = 'radial-gradient(circle at 38% 35%, rgba(180,255,220,0.95), rgba(34,160,80,0.95))';
+    const br = base.getBoundingClientRect();
+    ox = br.left + br.width/2;
+    oy = br.top  + br.height/2;
+    updateStick(cx, cy);
+    tryMove();
+    clearInterval(tid);
+    tid = setInterval(tryMove, INTERVAL);
+  }
+
+  function moveJoy(cx, cy){
+    if(!pressing) return;
+    updateStick(cx, cy);
+  }
+
+  function stopJoy(){
+    pressing = false;
+    dx = 0; dy = 0;
+    stick.style.transform = 'translate(-50%,-50%)';
+    stick.style.background = 'radial-gradient(circle at 38% 35%, rgba(136,255,204,0.85), rgba(34,120,60,0.9))';
+    clearInterval(tid);
+    tid = null;
+  }
+
+  // reset stick position
+  stick.style.transform = 'translate(-50%,-50%)';
+
+  // touch events
+  base.addEventListener('touchstart', e=>{
+    e.preventDefault();
+    const t = e.changedTouches[0];
+    startJoy(t.clientX, t.clientY);
+  }, {passive:false});
+  base.addEventListener('touchmove', e=>{
+    e.preventDefault();
+    const t = e.changedTouches[0];
+    moveJoy(t.clientX, t.clientY);
+  }, {passive:false});
+  base.addEventListener('touchend',   e=>{ e.preventDefault(); stopJoy(); }, {passive:false});
+  base.addEventListener('touchcancel',e=>{ e.preventDefault(); stopJoy(); }, {passive:false});
+
+  // mouse events (desktop)
+  base.addEventListener('mousedown', e=>{
+    e.preventDefault();
+    startJoy(e.clientX, e.clientY);
+  });
+  document.addEventListener('mousemove', e=>{
+    if(!pressing) return;
+    moveJoy(e.clientX, e.clientY);
+  });
+  document.addEventListener('mouseup', e=>{
+    if(pressing) stopJoy();
+  });
+}
+
+// close popup on outside click
+document.addEventListener('click',e=>{
+  const popup=document.getElementById('popup');
+  if(popup.classList.contains('active')&&!popup.contains(e.target)&&!e.target.classList.contains('hmenu-btn')&&!e.target.classList.contains('hud-stat-lbl')){
+    closePopup();
+  }
+});
+</script>
+</body>
+</html>
