@@ -413,6 +413,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
         <span class="hmenu-btn" onclick="confirmNew()" style="color:#ff8888">新檔</span>
       </div>
     </div>
+    <div class="hud-panel" style="margin-top:2px;display:flex;align-items:center;gap:6px">
+      <div style="color:#88ffcc;font-size:9px;font-weight:700">🎵 BGM</div>
+      <span id="bgm-btn" class="hmenu-btn" onclick="BGM.toggle()" style="font-size:13px;cursor:pointer" title="開關背景音樂">🔊</span>
+    </div>
   </div>
 
   <!-- BOTTOM HUD: 體力 法力 狀況 / 名字+HP+MP -->
@@ -570,13 +574,11 @@ beach:{
      dialog:['哥哥！我在這裡！','羅河鎮的魔導師很厲害喔！']},
     {type:'chest',x:3,y:12,item:'herb',qty:2},
     {type:'chest',x:15,y:9,item:'antidote',qty:1},
-    {type:'exit',x:8,y:15,toMap:'rohe',toX:8,toY:1,label:'↓ 往羅河鎮'},
+    {type:'exit',x:8,y:13,toMap:'field_beach_rohe',toX:8,toY:16,label:'↓ 往原野'},
   ],
-  enemies:[
-    {name:'泥怪',emoji:'🟤',hp:30,atk:8,def:3,exp:15,gold:10},
-    {name:'野狼',emoji:'🐺',hp:25,atk:10,def:2,exp:12,gold:8},
-  ],
-  spawnRate:0.18,
+  enemies:[],
+  spawnRate:0, // 城鎮無敵人
+  isTown:true,
 },
 
 // ─── 羅河鎮 ───────────────────────────────────────
@@ -615,14 +617,12 @@ rohe:{
      dialog:['索多最近在那克村的尖塔附近出沒...','快去打倒他！']},
     {type:'chest',x:17,y:11,item:'mpgrass',qty:2},
     {type:'chest',x:17,y:14,item:'recover',qty:1},
-    {type:'exit',x:8,y:17,toMap:'beach',toX:8,toY:14,label:'↑ 回濱海小村'},
-    {type:'exit',x:16,y:17,toMap:'nake',toX:5,toY:1,label:'↓ 往那克村'},
+    {type:'exit',x:8,y:15,toMap:'field_beach_rohe',toX:12,toY:16,label:'↑ 往原野（濱海方向）'},
+    {type:'exit',x:16,y:15,toMap:'field_rohe_nake',toX:0,toY:16,label:'↓ 往原野（那克方向）'},
   ],
-  enemies:[
-    {name:'哥布林',emoji:'👺',hp:45,atk:12,def:5,exp:25,gold:18},
-    {name:'骷髏兵',emoji:'💀',hp:50,atk:14,def:6,exp:30,gold:22},
-  ],
-  spawnRate:0.20,
+  enemies:[],
+  spawnRate:0,
+  isTown:true,
 },
 
 // ─── 那克村 ───────────────────────────────────────
@@ -659,14 +659,12 @@ nake:{
     {type:'chest',x:14,y:3,item:'recover',qty:2},
     {type:'chest',x:18,y:13,item:'antidote',qty:2},
     {type:'chest',x:18,y:7,item:'moongrass',qty:1},
-    {type:'exit',x:4,y:17,toMap:'rohe',toX:16,toY:16,label:'↑ 回羅河鎮'},
-    {type:'exit',x:4,y:0,toMap:'dkcity',toX:9,toY:14,label:'↑ 往迪克亞王城'},
+    {type:'exit',x:4,y:15,toMap:'field_rohe_nake',toX:15,toY:16,label:'↑ 往原野（羅河方向）'},
+    {type:'exit',x:4,y:2,toMap:'field_nake_dk',toX:9,toY:16,label:'↑ 往原野（王城方向）'},
   ],
-  enemies:[
-    {name:'骷髏兵',emoji:'💀',hp:55,atk:16,def:7,exp:35,gold:25},
-    {name:'魔族爪牙',emoji:'👿',hp:48,atk:18,def:6,exp:32,gold:20},
-  ],
-  spawnRate:0.22,
+  enemies:[],
+  spawnRate:0,
+  isTown:true,
 },
 
 // ─── 迪克亞王城 ───────────────────────────────────────
@@ -707,12 +705,11 @@ dkcity:{
        {text:'還沒準備好',action:'close'},
      ]},
     {type:'chest',x:16,y:12,item:'lightgrass',qty:1},
-    {type:'exit',x:9,y:17,toMap:'nake',toX:4,toY:16,label:'↓ 往那克村'},
+    {type:'exit',x:9,y:15,toMap:'field_nake_dk',toX:9,toY:1,label:'↓ 往原野'},
   ],
-  enemies:[
-    {name:'魔族士兵',emoji:'🧟',hp:60,atk:18,def:8,exp:40,gold:30},
-  ],
-  spawnRate:0.15,
+  enemies:[],
+  spawnRate:0,
+  isTown:true,
 },
 
 // ─── 沙那港 ───────────────────────────────────────
@@ -743,12 +740,11 @@ shaport:{
     {type:'npc',x:4,y:7,emoji:'⛵',name:'漁夫',
      dialog:['歡迎來到沙連王國！','卡爾村往南走就到了，','那裡有個生病的女孩...']},
     {type:'chest',x:16,y:5,item:'recover',qty:2},
-    {type:'exit',x:8,y:15,toMap:'carl',toX:8,toY:1,label:'↓ 往卡爾村'},
+    {type:'exit',x:8,y:13,toMap:'field_sha_carl',toX:8,toY:16,label:'↓ 往原野'},
   ],
-  enemies:[
-    {name:'海盜',emoji:'🏴‍☠️',hp:55,atk:15,def:7,exp:35,gold:25},
-  ],
-  spawnRate:0.18,
+  enemies:[],
+  spawnRate:0,
+  isTown:true,
 },
 
 // ─── 卡爾村 ───────────────────────────────────────
@@ -782,14 +778,12 @@ carl:{
      dialog:['感謝你救了蒂莉亞小姐！','奇異草的藥效真是神奇！']},
     {type:'chest',x:15,y:3,item:'antidote',qty:3},
     {type:'chest',x:15,y:11,item:'recover',qty:2},
-    {type:'exit',x:8,y:15,toMap:'shaport',toX:8,toY:14,label:'↑ 回沙那港'},
-    {type:'exit',x:8,y:0,toMap:'slcity',toX:9,toY:14,label:'↑ 往沙連王城'},
+    {type:'exit',x:8,y:13,toMap:'field_sha_carl',toX:11,toY:16,label:'↑ 往原野（沙那港方向）'},
+    {type:'exit',x:8,y:2,toMap:'field_carl_sl',toX:9,toY:16,label:'↑ 往原野（王城方向）'},
   ],
-  enemies:[
-    {name:'毒蘑菇',emoji:'🍄',hp:40,atk:10,def:4,exp:20,gold:15},
-    {name:'沙蟲',emoji:'🐛',hp:35,atk:12,def:3,exp:18,gold:12},
-  ],
-  spawnRate:0.18,
+  enemies:[],
+  spawnRate:0,
+  isTown:true,
 },
 
 // ─── 沙連王城 ───────────────────────────────────────
@@ -830,14 +824,12 @@ slcity:{
     {type:'npc',x:14,y:12,emoji:'🏪',name:'武器店',isShop:true,shopKey:'slcity_weapon'},
     {type:'chest',x:18,y:11,item:'lightgrass',qty:2},
     {type:'chest',x:1,y:11,item:'wings',qty:1},
-    {type:'exit',x:10,y:17,toMap:'carl',toX:8,toY:1,label:'↓ 回卡爾村'},
-    {type:'exit',x:10,y:0,toMap:'balcity',toX:9,toY:14,label:'↑ 往巴爾王城'},
+    {type:'exit',x:10,y:15,toMap:'field_carl_sl',toX:9,toY:1,label:'↓ 往原野（卡爾方向）'},
+    {type:'exit',x:10,y:2,toMap:'field_sl_bal',toX:9,toY:16,label:'↑ 往原野（巴爾方向）'},
   ],
-  enemies:[
-    {name:'惡靈',emoji:'👻',hp:70,atk:20,def:9,exp:50,gold:35},
-    {name:'海妖',emoji:'🧜',hp:65,atk:18,def:8,exp:45,gold:30},
-  ],
-  spawnRate:0.22,
+  enemies:[],
+  spawnRate:0,
+  isTown:true,
 },
 
 // ─── 巴爾王城 ───────────────────────────────────────
@@ -875,17 +867,269 @@ balcity:{
     {type:'npc',x:14,y:12,emoji:'🏪',name:'武器店',isShop:true,shopKey:'balcity_weapon'},
     {type:'chest',x:18,y:3,item:'crystalSword',qty:1},
     {type:'chest',x:1,y:3,item:'miracle',qty:1},
-    {type:'exit',x:9,y:17,toMap:'slcity',toX:10,toY:1,label:'↓ 回沙連王城'},
-    {type:'exit',x:9,y:0,toMap:'mscity',toX:9,toY:14,label:'↑ 往最終決戰'},
+    {type:'exit',x:9,y:15,toMap:'field_sl_bal',toX:9,toY:1,label:'↓ 往原野（沙連方向）'},
+    {type:'exit',x:9,y:2,toMap:'field_bal_ms',toX:9,toY:16,label:'↑ 往黑暗大陸'},
+  ],
+  enemies:[],
+  spawnRate:0,
+  isTown:true,
+},
+
+// ─── 原野：濱海小村 ↔ 羅河鎮 ───────────────────────────────────
+field_beach_rohe:{
+  id:'field_beach_rohe',name:'迪克亞原野',
+  w:20,h:18,
+  tiles:[
+    [TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,TR,TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR,TR,G_,G_,G_,G_,TR],
+    [TR,G_,TR,G_,G_,G_,BU,G_,G_,G_,G_,BU,G_,G_,TR,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,FL,G_,G_,G_,P_,G_,FL,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,BU,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,BU,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,FL,G_,G_,G_,G_,P_,G_,G_,G_,FL,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR,G_,G_,G_,G_,TR],
+    [TR,G_,TR,TR,G_,G_,G_,G_,G_,G_,G_,G_,TR,TR,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,TR,TR,TR,TR,TR,TR,TR,P_,TR,TR,TR,P_,TR,TR,TR,TR,TR,TR,TR],
+  ],
+  objects:[
+    {type:'chest',x:3,y:8,item:'herb',qty:2},
+    {type:'exit',x:8,y:15,toMap:'beach',toX:8,toY:14,label:'↑ 往濱海小村'},
+    {type:'exit',x:12,y:15,toMap:'rohe',toX:8,toY:1,label:'↓ 往羅河鎮'},
+  ],
+  enemies:[
+    {name:'泥怪',emoji:'🟤',hp:30,atk:8,def:3,exp:15,gold:10},
+    {name:'野狼',emoji:'🐺',hp:25,atk:10,def:2,exp:12,gold:8},
+    {name:'哥布林',emoji:'👺',hp:40,atk:11,def:4,exp:20,gold:14},
+  ],
+  spawnRate:0.25,
+},
+// ─── 原野：羅河鎮 ↔ 那克村 ───────────────────────────────────
+field_rohe_nake:{
+  id:'field_rohe_nake',name:'迪克亞荒野',
+  w:20,h:18,
+  tiles:[
+    [TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,TR,TR,G_,G_,G_,TR,TR,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,BU,G_,G_,TR,G_,G_,G_,G_,G_,TR,G_,G_,BU,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,P_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,P_,G_,FL,G_,G_,G_,G_,G_,G_,FL,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,P_,G_,G_,BU,G_,G_,G_,G_,BU,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,P_,P_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,P_,G_,TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,P_,G_,TR,TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,P_,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,P_,TR,TR,TR,TR],
+  ],
+  objects:[
+    {type:'chest',x:17,y:6,item:'mpgrass',qty:1},
+    {type:'chest',x:17,y:12,item:'antidote',qty:1},
+    {type:'exit',x:2,y:15,toMap:'rohe',toX:16,toY:1,label:'← 往羅河鎮'},
+    {type:'exit',x:15,y:15,toMap:'nake',toX:5,toY:1,label:'→ 往那克村'},
+  ],
+  enemies:[
+    {name:'哥布林',emoji:'👺',hp:45,atk:12,def:5,exp:25,gold:18},
+    {name:'骷髏兵',emoji:'💀',hp:50,atk:14,def:6,exp:30,gold:22},
+    {name:'魔族爪牙',emoji:'👿',hp:48,atk:13,def:5,exp:28,gold:20},
+  ],
+  spawnRate:0.28,
+},
+// ─── 原野：那克村 ↔ 迪克亞王城 ───────────────────────────────────
+field_nake_dk:{
+  id:'field_nake_dk',name:'迪克亞王道',
+  w:20,h:18,
+  tiles:[
+    [TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,TR,TR,G_,G_,G_,G_,P_,G_,G_,G_,TR,TR,G_,G_,G_,G_,TR],
+    [TR,G_,G_,TR,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,TR,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,BU,G_,G_,P_,G_,BU,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,FL,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,FL,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,BU,G_,G_,G_,P_,G_,BU,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,TR,G_,G_,G_,G_,P_,G_,G_,G_,TR,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,TR,TR,G_,G_,G_,G_,P_,G_,TR,TR,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,TR,TR,TR,TR,TR,TR,TR,TR,P_,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR],
+  ],
+  objects:[
+    {type:'chest',x:2,y:7,item:'recover',qty:1},
+    {type:'exit',x:9,y:15,toMap:'nake',toX:4,toY:1,label:'↓ 往那克村'},
+    {type:'exit',x:9,y:2,toMap:'dkcity',toX:9,toY:15,label:'↑ 往迪克亞王城'},
+  ],
+  enemies:[
+    {name:'骷髏兵',emoji:'💀',hp:55,atk:16,def:7,exp:35,gold:25},
+    {name:'魔族爪牙',emoji:'👿',hp:48,atk:18,def:6,exp:32,gold:20},
+    {name:'魔族士兵',emoji:'🧟',hp:60,atk:18,def:8,exp:40,gold:30},
+  ],
+  spawnRate:0.28,
+},
+// ─── 原野：沙那港 ↔ 卡爾村 ───────────────────────────────────
+field_sha_carl:{
+  id:'field_sha_carl',name:'沙連海岸道',
+  w:20,h:18,
+  tiles:[
+    [TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,TR,TR,G_,G_,G_,G_,TR,TR,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,TR,G_,G_,G_,G_,G_,G_,TR,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,WA,WA,WA,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,WA,WA,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,BU,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,BU,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,FL,G_,G_,G_,G_,P_,G_,G_,FL,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,TR,G_,G_,G_,P_,G_,TR,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,TR,TR,G_,G_,G_,P_,TR,TR,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,TR,TR,TR,TR,TR,TR,TR,P_,TR,TR,P_,TR,TR,TR,TR,TR,TR,TR,TR],
+  ],
+  objects:[
+    {type:'chest',x:16,y:8,item:'antidote',qty:2},
+    {type:'exit',x:8,y:15,toMap:'shaport',toX:8,toY:14,label:'↑ 往沙那港'},
+    {type:'exit',x:11,y:15,toMap:'carl',toX:8,toY:1,label:'↓ 往卡爾村'},
+  ],
+  enemies:[
+    {name:'海盜',emoji:'🏴‍☠️',hp:55,atk:15,def:7,exp:35,gold:25},
+    {name:'毒蘑菇',emoji:'🍄',hp:40,atk:10,def:4,exp:20,gold:15},
+    {name:'沙蟲',emoji:'🐛',hp:35,atk:12,def:3,exp:18,gold:12},
+  ],
+  spawnRate:0.25,
+},
+// ─── 原野：卡爾村 ↔ 沙連王城 ───────────────────────────────────
+field_carl_sl:{
+  id:'field_carl_sl',name:'沙連王國平原',
+  w:20,h:18,
+  tiles:[
+    [TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,TR,TR,G_,G_,G_,G_,G_,G_,G_,TR,TR,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,TR,G_,G_,G_,G_,G_,P_,G_,G_,G_,TR,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,BU,G_,G_,G_,P_,G_,BU,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,FL,G_,G_,G_,G_,P_,G_,FL,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,TR,G_,G_,G_,G_,P_,G_,G_,TR,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,TR,TR,G_,G_,G_,G_,P_,G_,TR,TR,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,TR,TR,TR,TR,TR,TR,TR,TR,P_,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR],
+  ],
+  objects:[
+    {type:'chest',x:2,y:6,item:'mpgrass',qty:2},
+    {type:'exit',x:9,y:15,toMap:'carl',toX:8,toY:14,label:'↓ 往卡爾村'},
+    {type:'exit',x:9,y:2,toMap:'slcity',toX:10,toY:15,label:'↑ 往沙連王城'},
+  ],
+  enemies:[
+    {name:'惡靈',emoji:'👻',hp:70,atk:20,def:9,exp:50,gold:35},
+    {name:'海妖',emoji:'🧜',hp:65,atk:18,def:8,exp:45,gold:30},
+    {name:'海盜',emoji:'🏴‍☠️',hp:60,atk:16,def:7,exp:38,gold:28},
+  ],
+  spawnRate:0.28,
+},
+// ─── 原野：沙連王城 ↔ 巴爾王城 ───────────────────────────────────
+field_sl_bal:{
+  id:'field_sl_bal',name:'巴爾山道',
+  w:20,h:18,
+  tiles:[
+    [TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,ST,G_,G_,G_,G_,G_,P_,G_,G_,ST,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,BU,G_,G_,G_,P_,G_,BU,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,ST,G_,G_,G_,G_,P_,G_,G_,ST,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,BU,G_,G_,G_,P_,G_,BU,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,P_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,G_,TR],
+    [TR,TR,TR,TR,TR,TR,TR,TR,TR,P_,TR,TR,TR,TR,TR,TR,TR,TR,TR,TR],
+  ],
+  objects:[
+    {type:'chest',x:2,y:9,item:'lightgrass',qty:1},
+    {type:'chest',x:17,y:5,item:'recover',qty:2},
+    {type:'exit',x:9,y:15,toMap:'slcity',toX:10,toY:1,label:'↓ 往沙連王城'},
+    {type:'exit',x:9,y:2,toMap:'balcity',toX:9,toY:15,label:'↑ 往巴爾王城'},
   ],
   enemies:[
     {name:'地精',emoji:'🧌',hp:80,atk:22,def:10,exp:60,gold:40},
     {name:'雪狼',emoji:'🐺',hp:90,atk:25,def:12,exp:70,gold:45},
     {name:'冰霜妖',emoji:'🌨️',hp:100,atk:28,def:14,exp:80,gold:50},
   ],
-  spawnRate:0.28,
+  spawnRate:0.30,
 },
-
+// ─── 原野：巴爾王城 ↔ 摩色頓王城（黑暗大陸）───────────────────────
+field_bal_ms:{
+  id:'field_bal_ms',name:'黑暗大陸',
+  w:20,h:18,
+  tiles:[
+    [DK,DK,DK,DK,DK,DK,DK,DK,DK,DK,DK,DK,DK,DK,DK,DK,DK,DK,DK,DK],
+    [DK,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,DK],
+    [DK,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,DK],
+    [DK,CV,CV,ST,CV,CV,CV,CV,CV,P_,CV,CV,ST,CV,CV,CV,CV,CV,CV,DK],
+    [DK,CV,CV,CV,CV,CV,CV,CV,CV,P_,CV,CV,CV,CV,CV,CV,CV,CV,CV,DK],
+    [DK,CV,CV,CV,CV,CV,CV,CV,CV,P_,CV,CV,CV,CV,CV,CV,CV,CV,CV,DK],
+    [DK,CV,CV,CV,CV,CV,CV,CV,CV,P_,CV,CV,CV,CV,CV,CV,CV,CV,CV,DK],
+    [DK,CV,CV,CV,ST,CV,CV,CV,CV,P_,CV,CV,ST,CV,CV,CV,CV,CV,CV,DK],
+    [DK,CV,CV,CV,CV,CV,CV,CV,CV,P_,CV,CV,CV,CV,CV,CV,CV,CV,CV,DK],
+    [DK,CV,CV,CV,CV,CV,CV,CV,CV,P_,CV,CV,CV,CV,CV,CV,CV,CV,CV,DK],
+    [DK,CV,CV,CV,CV,CV,CV,CV,CV,P_,CV,CV,CV,CV,CV,CV,CV,CV,CV,DK],
+    [DK,CV,CV,CV,CV,CV,CV,CV,CV,P_,CV,CV,CV,CV,CV,CV,CV,CV,CV,DK],
+    [DK,CV,CV,CV,CV,CV,CV,CV,CV,P_,CV,CV,CV,CV,CV,CV,CV,CV,CV,DK],
+    [DK,CV,CV,CV,CV,CV,CV,CV,CV,P_,CV,CV,CV,CV,CV,CV,CV,CV,CV,DK],
+    [DK,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,DK],
+    [DK,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,DK],
+    [DK,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,CV,DK],
+    [DK,DK,DK,DK,DK,DK,DK,DK,DK,P_,DK,DK,DK,DK,DK,DK,DK,DK,DK,DK],
+  ],
+  objects:[
+    {type:'chest',x:2,y:8,item:'miracle',qty:2},
+    {type:'chest',x:17,y:8,item:'revive',qty:2},
+    {type:'exit',x:9,y:15,toMap:'balcity',toX:9,toY:1,label:'↓ 往巴爾王城'},
+    {type:'exit',x:9,y:2,toMap:'mscity',toX:9,toY:15,label:'↑ 往摩色頓王城'},
+  ],
+  enemies:[
+    {name:'魔族精英',emoji:'💂',hp:200,atk:55,def:28,exp:200,gold:100},
+    {name:'死靈法師',emoji:'💀',hp:180,atk:65,def:20,exp:220,gold:110},
+    {name:'惡魔龍',emoji:'🐲',hp:250,atk:70,def:35,exp:280,gold:150},
+  ],
+  spawnRate:0.32,
+},
 // ─── 摩色頓王城（最終） ───────────────────────────────────────
 mscity:{
   id:'mscity',name:'摩色頓王城・最終決戰',
@@ -926,13 +1170,11 @@ mscity:{
     {type:'chest',x:18,y:11,item:'miracle',qty:5},
     {type:'chest',x:1,y:11,item:'revive',qty:3},
     {type:'chest',x:18,y:5,item:'heroSword',qty:1},
-    {type:'exit',x:9,y:17,toMap:'balcity',toX:9,toY:1,label:'↓ 回巴爾王城'},
+    {type:'exit',x:9,y:15,toMap:'field_bal_ms',toX:9,toY:1,label:'↓ 往黑暗大陸'},
   ],
-  enemies:[
-    {name:'魔族精英',emoji:'💂',hp:200,atk:55,def:28,exp:200,gold:100},
-    {name:'死靈法師',emoji:'💀',hp:180,atk:65,def:20,exp:220,gold:110},
-  ],
-  spawnRate:0.22,
+  enemies:[],
+  spawnRate:0,
+  isTown:true,
 },
 };
 
@@ -1146,21 +1388,32 @@ function drawObjects(map, sx,sy,ex,ey){
   (map.objects||[]).forEach((obj,i)=>{
     if(obj.type==='exit'){
       const {sx:os,sy:os2} = tileToScreen(obj.x,obj.y);
-      // glowing exit tile
-      ctx.fillStyle='rgba(68,255,170,0.12)';
-      ctx.fillRect(os,os2,TW,TW);
-      ctx.strokeStyle='rgba(68,255,170,0.5)';
-      ctx.lineWidth=1.5;
-      ctx.strokeRect(os+1,os2+1,TW-2,TW-2);
-      ctx.lineWidth=1;
-      ctx.font=`${TW*0.5}px serif`;
-      ctx.textBaseline='middle';
-      ctx.fillText('🚪',os+TW/2,os2+TW/2);
-      // label
-      ctx.fillStyle='rgba(68,255,170,0.9)';
-      ctx.font="10px 'Noto Sans TC'";
-      ctx.textBaseline='bottom';
-      ctx.fillText(obj.label||'出口', os+TW/2, os2-1);
+      // 脈衝動畫（基於時間）
+      const pulse = 0.45 + 0.35 * Math.sin(Date.now() / 380);
+      // 發光底色
+      ctx.fillStyle = `rgba(68,255,170,${0.18 + pulse * 0.18})`;
+      ctx.fillRect(os, os2, TW, TW);
+      // 外框（雙層，閃爍）
+      ctx.strokeStyle = `rgba(68,255,170,${0.55 + pulse * 0.45})`;
+      ctx.lineWidth = 2.5;
+      ctx.strokeRect(os+2, os2+2, TW-4, TW-4);
+      ctx.strokeStyle = `rgba(255,255,255,${0.15 + pulse * 0.15})`;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(os+5, os2+5, TW-10, TW-10);
+      ctx.lineWidth = 1;
+      // 門圖示（大且明顯）
+      ctx.font = `${TW*0.62}px serif`;
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🚪', os+TW/2, os2+TW/2+2);
+      // 標籤（帶背景遮罩讓文字可讀）
+      const lbl = obj.label || '出口';
+      ctx.font = "bold 9px 'Noto Sans TC', sans-serif";
+      const tw2 = ctx.measureText(lbl).width;
+      ctx.fillStyle = 'rgba(0,0,0,0.65)';
+      ctx.fillRect(os+TW/2-tw2/2-3, os2-16, tw2+6, 14);
+      ctx.fillStyle = `rgba(136,255,204,${0.85 + pulse * 0.15})`;
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(lbl, os+TW/2, os2-3);
       return;
     }
     if(obj.type==='chest'){
@@ -1295,9 +1548,10 @@ function stepMove(){
     onArrival();
   }
   // random encounter
-  if(Math.random()<(MAPS[G.mapId]?.spawnRate||0.2)/10){
+  const _map=MAPS[G.mapId];
+  if(!_map?.isTown && _map?.enemies?.length && Math.random()<(_map.spawnRate||0.2)/10){
     movePath=[];moveTarget=null;
-    triggerEncounter(MAPS[G.mapId].enemies);
+    triggerEncounter(_map.enemies);
   }
 }
 
@@ -1457,8 +1711,7 @@ function talkNPC(obj){
     if(idx>=lines.length){
       // post-dialog actions
       if(obj.joinId&&!G.party.find(p=>p.id===obj.joinId)){
-        addMember(obj.joinId);
-        closeDialog();
+        addMember(obj.joinId); // addMember opens its own dialog
         return;
       }
       if(obj.isBoss&&!G.defeatedBosses.includes(obj.bossKey)){
@@ -1500,10 +1753,11 @@ const PARTY_TEMPLATES={
 };
 function addMember(id){
   const t=PARTY_TEMPLATES[id]; if(!t) return;
+  if(G.party.find(p=>p.id===id)) return; // already in party
   G.party.push({...t});
-  showDialog('✨ 加入隊伍',`${t.emoji} ${t.name} 加入了你的隊伍！`,[],null);
-  notify(`✨ ${t.name} 加入！`);
+  notify(`✨ ${t.emoji}${t.name} 加入隊伍！`);
   renderHudBot();
+  showDialog('✨ 加入隊伍',`${t.emoji} ${t.name} 加入了你的旅途！`,[],null);
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1986,7 +2240,7 @@ try{
     movePath = []; moveTarget = null;
     playerAnim = (playerAnim+1)%4;
 
-    if(Math.random() < (map.spawnRate||0.2)/10){
+    if(!map.isTown && map.enemies?.length && Math.random() < (map.spawnRate||0.2)/10){
       triggerEncounter(map.enemies);
       stopJoy(); return;
     }
@@ -2056,6 +2310,293 @@ document.addEventListener('click',e=>{
   if(popup.classList.contains('active')&&!popup.contains(e.target)&&!e.target.classList.contains('hmenu-btn')&&!e.target.classList.contains('hud-stat-lbl')){
     closePopup();
   }
+});
+
+// ══════════════════════════════════════════════════════════
+//  🎵 FC 80年代風格 CHIPTUNE 音樂引擎
+// ══════════════════════════════════════════════════════════
+const BGM = (function(){
+  let ctx = null;
+  let masterGain = null;
+  let currentType = null;
+  let scheduledNodes = [];
+  let loopTimeout = null;
+  let muted = false;
+  let started = false;
+
+  // 音符頻率表（FC音源標準）
+  const NOTE = {
+    C3:130.81,D3:146.83,E3:164.81,F3:174.61,G3:196.00,A3:220.00,B3:246.94,
+    C4:261.63,D4:293.66,E4:329.63,F4:349.23,G4:392.00,A4:440.00,B4:493.88,
+    C5:523.25,D5:587.33,E5:659.25,F5:698.46,G5:783.99,A5:880.00,B5:987.77,
+    C6:1046.5,D6:1174.7,E6:1318.5,F6:1396.9,G6:1568.0,A6:1760.0,
+    r:0 // rest
+  };
+
+  // ── 城市 BGM（溫馨大調，方波主旋律+三角波和弦）──
+  // 曲式：A段8小節，像《勇者鬥惡龍》城鎮主題
+  const TOWN_BPM = 120;
+  const TOWN_BEAT = 60 / TOWN_BPM;
+  const N_ = NOTE;
+
+  // 主旋律（方波，佔拍 0.85）
+  const TOWN_MELODY = [
+    // A段
+    {n:N_.E5,d:0.5},{n:N_.D5,d:0.5},{n:N_.C5,d:0.5},{n:N_.E5,d:0.5},
+    {n:N_.G5,d:1.0},{n:T.r,d:0.5},{n:N_.G5,d:0.5},
+    {n:N_.A5,d:0.5},{n:N_.G5,d:0.5},{n:N_.E5,d:0.5},{n:N_.C5,d:0.5},
+    {n:N_.D5,d:2.0},
+    // B段
+    {n:N_.F5,d:0.5},{n:N_.E5,d:0.5},{n:N_.D5,d:0.5},{n:N_.F5,d:0.5},
+    {n:N_.A5,d:1.0},{n:T.r,d:0.5},{n:N_.A5,d:0.5},
+    {n:N_.G5,d:0.5},{n:N_.F5,d:0.5},{n:N_.E5,d:0.5},{n:N_.D5,d:0.5},
+    {n:N_.C5,d:2.0},
+    // C段（副旋律）
+    {n:N_.C5,d:0.25},{n:N_.D5,d:0.25},{n:N_.E5,d:0.25},{n:N_.F5,d:0.25},
+    {n:N_.G5,d:0.5},{n:N_.G5,d:0.5},
+    {n:N_.A5,d:0.25},{n:N_.G5,d:0.25},{n:N_.F5,d:0.25},{n:N_.E5,d:0.25},
+    {n:N_.D5,d:0.5},{n:N_.C5,d:0.5},
+    {n:N_.E5,d:0.5},{n:N_.G5,d:0.5},{n:N_.C6,d:1.0},
+  ];
+
+  // 和聲（三角波低音）
+  const TOWN_BASS = [
+    {n:N_.C3,d:1},{n:N_.G3,d:1},{n:N_.A3,d:1},{n:N_.F3,d:1},
+    {n:N_.C3,d:1},{n:N_.G3,d:1},{n:N_.A3,d:1},{n:N_.E3,d:1},
+    {n:N_.F3,d:1},{n:N_.C3,d:1},{n:N_.G3,d:1},{n:N_.D3,d:1},
+    {n:N_.C3,d:2},{n:N_.G3,d:1},{n:N_.C3,d:1},
+    // repeat
+    {n:N_.C3,d:1},{n:N_.G3,d:1},{n:N_.A3,d:1},{n:N_.F3,d:1},
+    {n:N_.C3,d:1},{n:N_.G3,d:1},{n:N_.A3,d:1},{n:N_.E3,d:1},
+    {n:N_.F3,d:1},{n:N_.C3,d:1},{n:N_.G3,d:1},{n:N_.D3,d:1},
+    {n:N_.C3,d:2},{n:N_.G3,d:1},{n:N_.C3,d:1},
+  ];
+
+  // ── 荒野 BGM（緊張小調，鋸齒波+噪音打擊）──
+  const FIELD_BPM = 140;
+  const FIELD_BEAT = 60 / FIELD_BPM;
+
+  const FIELD_MELODY = [
+    // 危機感主題（A小調）
+    {n:N_.A4,d:0.5},{n:F.r,d:0.25},{n:N_.A4,d:0.25},{n:N_.C5,d:0.5},{n:F.r,d:0.5},
+    {n:N_.B4,d:0.5},{n:F.r,d:0.25},{n:N_.B4,d:0.25},{n:N_.D5,d:0.5},{n:F.r,d:0.5},
+    {n:N_.G4,d:0.5},{n:N_.A4,d:0.25},{n:N_.B4,d:0.25},{n:N_.C5,d:0.5},{n:N_.D5,d:0.5},
+    {n:N_.E5,d:1.0},{n:F.r,d:1.0},
+    // B段（加劇張力）
+    {n:N_.C5,d:0.25},{n:N_.B4,d:0.25},{n:N_.A4,d:0.25},{n:N_.G4,d:0.25},{n:N_.F4,d:0.5},{n:F.r,d:0.5},
+    {n:N_.E4,d:0.25},{n:N_.F4,d:0.25},{n:N_.G4,d:0.25},{n:N_.A4,d:0.25},{n:N_.B4,d:0.5},{n:F.r,d:0.5},
+    {n:N_.C5,d:0.5},{n:N_.E5,d:0.5},{n:N_.D5,d:0.5},{n:N_.C5,d:0.5},
+    {n:N_.A4,d:2.0},
+    // C段（疾走）
+    {n:N_.A4,d:0.25},{n:N_.B4,d:0.25},{n:N_.C5,d:0.25},{n:N_.D5,d:0.25},
+    {n:N_.E5,d:0.25},{n:N_.D5,d:0.25},{n:N_.C5,d:0.25},{n:N_.B4,d:0.25},
+    {n:N_.A4,d:0.25},{n:N_.G4,d:0.25},{n:N_.F4,d:0.25},{n:N_.E4,d:0.25},
+    {n:N_.A4,d:0.5},{n:N_.C5,d:0.5},
+    {n:N_.E5,d:0.5},{n:N_.A5,d:1.5},
+  ];
+
+  const FIELD_BASS = [
+    {n:N_.A2,d:0.5},{n:F.r,d:0.5},{n:N_.A2,d:0.5},{n:F.r,d:0.5},
+    {n:N_.G2,d:0.5},{n:F.r,d:0.5},{n:N_.G2,d:0.5},{n:F.r,d:0.5},
+    {n:N_.F2,d:0.5},{n:F.r,d:0.5},{n:N_.F2,d:0.5},{n:F.r,d:0.5},
+    {n:N_.E2,d:0.5},{n:F.r,d:0.5},{n:N_.A2,d:1.0},
+    {n:N_.A2,d:0.5},{n:F.r,d:0.5},{n:N_.A2,d:0.5},{n:F.r,d:0.5},
+    {n:N_.G2,d:0.5},{n:F.r,d:0.5},{n:N_.G2,d:0.5},{n:F.r,d:0.5},
+    {n:N_.F2,d:0.5},{n:N_.E2,d:0.5},{n:N_.D2,d:0.5},{n:N_.C2,d:0.5},
+    {n:N_.A2,d:2.0},
+  ];
+
+  function initCtx(){
+    if(ctx) return;
+    ctx = new (window.AudioContext||window.webkitAudioContext)();
+    masterGain = ctx.createGain();
+    masterGain.gain.value = 0.22;
+    masterGain.connect(ctx.destination);
+  }
+
+  // 建立一個方波振盪器音符
+  function scheduleNote(type, freq, startTime, duration, vol, detune){
+    if(!ctx||freq===0) return null;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type; // 'square','triangle','sawtooth'
+    osc.frequency.value = freq;
+    if(detune) osc.detune.value = detune;
+    gain.gain.setValueAtTime(vol, startTime);
+    gain.gain.setValueAtTime(vol * 0.85, startTime + duration * 0.7);
+    gain.gain.linearRampToValueAtTime(0, startTime + duration * 0.95);
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(startTime);
+    osc.stop(startTime + duration);
+    scheduledNodes.push(osc);
+    return osc;
+  }
+
+  // 建立噪音打擊
+  function scheduleNoise(startTime, duration, vol){
+    if(!ctx) return;
+    const bufferSize = ctx.sampleRate * duration;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i=0;i<bufferSize;i++) data[i] = (Math.random()*2-1);
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 3000;
+    gain.gain.setValueAtTime(vol, startTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime+duration);
+    src.connect(filter);
+    filter.connect(gain);
+    gain.connect(masterGain);
+    src.start(startTime);
+    scheduledNodes.push(src);
+  }
+
+  function stopAll(){
+    clearTimeout(loopTimeout);
+    scheduledNodes.forEach(n=>{ try{ n.stop(); }catch(e){} });
+    scheduledNodes = [];
+    currentType = null;
+  }
+
+  function playTownBGM(){
+    if(muted) return;
+    initCtx();
+    if(ctx.state==='suspended') ctx.resume();
+    currentType = 'town';
+    let t = ctx.currentTime + 0.05;
+    const beat = TOWN_BEAT;
+
+    // 主旋律 方波
+    let mt = t;
+    TOWN_MELODY.forEach(({n,d})=>{
+      if(n>0) scheduleNote('square', n, mt, d*beat*0.85, 0.28);
+      mt += d * beat;
+    });
+
+    // 低音 三角波
+    let bt = t;
+    TOWN_BASS.forEach(({n,d})=>{
+      if(n>0) scheduleNote('triangle', n, bt, d*beat*0.9, 0.18);
+      bt += d * beat;
+    });
+
+    // 和弦點綴（每2拍一個琶音）
+    const chords = [
+      [N_.C4,N_.E4,N_.G4],[N_.F3,N_.A3,N_.C4],[N_.G3,N_.B3,N_.D4],[N_.A3,N_.C4,N_.E4],
+      [N_.C4,N_.E4,N_.G4],[N_.G3,N_.B3,N_.D4],[N_.F3,N_.A3,N_.C4],[N_.C4,N_.E4,N_.G4],
+    ];
+    let ct = t;
+    chords.forEach(chord=>{
+      chord.forEach((f,i)=>scheduleNote('triangle', f, ct+i*0.04, beat*1.8, 0.07));
+      ct += beat * 2;
+    });
+
+    // 計算總時長（取最長聲部）
+    const totalDur = Math.max(
+      TOWN_MELODY.reduce((s,{d})=>s+d,0),
+      TOWN_BASS.reduce((s,{d})=>s+d,0)
+    ) * beat + 0.1;
+
+    loopTimeout = setTimeout(()=>{
+      if(currentType==='town'&&!muted) playTownBGM();
+    }, totalDur * 1000);
+  }
+
+  function playFieldBGM(){
+    if(muted) return;
+    initCtx();
+    if(ctx.state==='suspended') ctx.resume();
+    currentType = 'field';
+    let t = ctx.currentTime + 0.05;
+    const beat = FIELD_BEAT;
+
+    // 主旋律 鋸齒波（FC風格帶點銳利感）
+    let mt = t;
+    FIELD_MELODY.forEach(({n,d})=>{
+      if(n>0){
+        scheduleNote('sawtooth', n, mt, d*beat*0.82, 0.18);
+        // 輕微和聲
+        scheduleNote('square', n, mt, d*beat*0.82, 0.08, 7);
+      }
+      mt += d * beat;
+    });
+
+    // 低音 方波
+    let bt = t;
+    FIELD_BASS.forEach(({n,d})=>{
+      if(n>0) scheduleNote('square', n, bt, d*beat*0.88, 0.20);
+      bt += d * beat;
+    });
+
+    // 打擊音噪音（8分音符節拍）
+    const totalBeats = FIELD_MELODY.reduce((s,{d})=>s+d,0);
+    for(let i=0; i<totalBeats*2; i++){
+      const bt2 = t + i * beat * 0.5;
+      if(i%4===0) scheduleNoise(bt2, 0.06, 0.35);       // 重拍
+      else if(i%2===0) scheduleNoise(bt2, 0.04, 0.18);  // 弱拍
+    }
+
+    const totalDur = Math.max(
+      FIELD_MELODY.reduce((s,{d})=>s+d,0),
+      FIELD_BASS.reduce((s,{d})=>s+d,0)
+    ) * beat + 0.1;
+
+    loopTimeout = setTimeout(()=>{
+      if(currentType==='field'&&!muted) playFieldBGM();
+    }, totalDur * 1000);
+  }
+
+  function play(type){
+    if(muted) return;
+    if(currentType===type) return; // already playing correct track
+    stopAll();
+    if(type==='town') playTownBGM();
+    else if(type==='field') playFieldBGM();
+  }
+
+  function toggle(){
+    muted = !muted;
+    if(muted){
+      stopAll();
+      if(masterGain) masterGain.gain.value = 0;
+    } else {
+      initCtx();
+      if(masterGain) masterGain.gain.value = 0.22;
+      // resume correct track
+      const map = MAPS[G.mapId];
+      if(map) play(map.isTown ? 'town' : 'field');
+    }
+    document.getElementById('bgm-btn').textContent = muted ? '🔇' : '🔊';
+  }
+
+  return { play, toggle, stopAll, initCtx };
+})();
+
+// ── 音樂掛鉤：用事件橋接，避免重新宣告 function 導致提升衝突 ──
+// 覆寫 travelToMap：存原始參考後用箭頭函式包裝
+{
+  const _orig = window.travelToMap;
+  window.travelToMap = function(mapId, toX, toY){
+    _orig(mapId, toX, toY);
+    const map = MAPS[mapId];
+    if(map) BGM.play(map.isTown ? 'town' : 'field');
+  };
+}
+
+// 標題畫面「開始遊戲」按鈕：加音樂啟動（不重新宣告 startGame）
+document.querySelectorAll('.ts-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    BGM.initCtx();
+    // 延遲一幀再偵測地圖，確保 startGame 已執行完
+    requestAnimationFrame(()=>{
+      const map = MAPS[G && G.mapId];
+      if(map) BGM.play(map.isTown ? 'town' : 'field');
+    });
+  });
 });
 </script>
 </body>
