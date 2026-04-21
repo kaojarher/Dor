@@ -448,11 +448,14 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
     <div id="bt-status"></div>
     <div id="bt-log"></div>
     <div id="bt-cmds">
-      <button class="btcmd" onclick="bCmd('attack')"><span class="btcmd-icon">⚔️</span>攻擊</button>
-      <button class="btcmd" onclick="bCmd('magic')"><span class="btcmd-icon">✨</span>魔法</button>
+      <button class="btcmd" onclick="bShowMemberMenu('attack')"><span class="btcmd-icon">⚔️</span>攻擊</button>
+      <button class="btcmd" onclick="bShowMemberMenu('magic')"><span class="btcmd-icon">✨</span>魔法</button>
       <button class="btcmd" onclick="bCmd('item')"><span class="btcmd-icon">🎒</span>道具</button>
       <button class="btcmd" onclick="bCmd('flee')"><span class="btcmd-icon">🏃</span>逃跑</button>
+      <button class="btcmd" id="bt-auto-btn" onclick="toggleAutoBattle()"><span class="btcmd-icon">🤖</span>自動</button>
     </div>
+    <!-- 戰鬥子選單（選隊員/法術） -->
+    <div id="bt-submenu" style="display:none;background:rgba(0,0,0,0.97);border-top:1px solid #2a4a2a;padding:4px 6px;flex-wrap:wrap;gap:4px;"></div>
   </div>
 
   <!-- POPUP MENU -->
@@ -1695,7 +1698,9 @@ function showDialog(name, text, choices, cb){
 
 function advanceDialog(){
   if(dialogChoices&&dialogChoices.length) return; // wait for choice
+  const cb = dialogCallback;
   closeDialog();
+  if(cb) cb(); // 繼續下一句對話或執行 post-dialog 動作（加入夥伴、觸發 BOSS 等）
 }
 function closeDialog(){
   document.getElementById('dialog').style.display='none';
@@ -1809,32 +1814,152 @@ function renderBattle(){
   });
 }
 
+// ── 戰鬥子選單：選隊員後再選動作/法術 ──
+let _btAction = null; // 'attack' | 'magic'
+let _autoBattle = false;
+let _autoTimer = null;
+
+function bCloseSubmenu(){
+  const sm = document.getElementById('bt-submenu');
+  sm.style.display = 'none';
+  sm.innerHTML = '';
+  _btAction = null;
+}
+
+function bShowMemberMenu(action){
+  if(!G.battle) return;
+  _btAction = action;
+  const aliveMembers = G.party.filter(h=>h.hp>0);
+  if(!aliveMembers.length) return;
+  // 只有一名存活直接跳到下一步
+  if(aliveMembers.length===1){
+    bMemberSelected(aliveMembers[0], action);
+    return;
+  }
+  const sm = document.getElementById('bt-submenu');
+  sm.innerHTML = '<span style="color:#88ffcc;font-size:10px;margin-right:6px;">選擇角色：</span>';
+  sm.style.display = 'flex';
+  aliveMembers.forEach(h=>{
+    const btn = document.createElement('button');
+    btn.className = 'btcmd';
+    btn.style.flex = '0 0 auto';
+    btn.style.padding = '4px 8px';
+    btn.innerHTML = `<span style="font-size:1rem">${h.emoji}</span><br><span style="font-size:9px">${h.name}</span>`;
+    btn.onclick = ()=>{ bMemberSelected(h, action); };
+    sm.appendChild(btn);
+  });
+  // 取消
+  const cancel = document.createElement('button');
+  cancel.className = 'btcmd';
+  cancel.style.cssText = 'flex:0 0 auto;padding:4px 8px;color:#ff8888';
+  cancel.textContent = '✕';
+  cancel.onclick = bCloseSubmenu;
+  sm.appendChild(cancel);
+}
+
+function bMemberSelected(hero, action){
+  if(action==='attack'){
+    bCloseSubmenu();
+    // 讓玩家點擊敵人（或自動選第一個）
+    bDoAttack(hero);
+  } else if(action==='magic'){
+    // 顯示該隊員的攻擊法術清單
+    const atkSp = SPELLS.filter(s=>(hero.spells||[]).includes(s.name));
+    if(!atkSp.length){ blg('sys', `${hero.name} 無可用法術！`); bCloseSubmenu(); return; }
+    const sm = document.getElementById('bt-submenu');
+    sm.innerHTML = `<span style="color:#88ffcc;font-size:10px;margin-right:4px;">${hero.emoji} 法術：</span>`;
+    sm.style.display = 'flex';
+    atkSp.forEach(sp=>{
+      const canCast = hero.mp >= sp.mp;
+      const btn = document.createElement('button');
+      btn.className = 'btcmd';
+      btn.style.cssText = `flex:0 0 auto;padding:3px 7px;opacity:${canCast?1:0.4}`;
+      btn.innerHTML = `<span style="font-size:0.9rem">${sp.emoji}</span><br><span style="font-size:9px">${sp.name} MP:${sp.mp}</span>`;
+      if(canCast) btn.onclick = ()=>{ bDoMagic(hero, sp); bCloseSubmenu(); };
+      sm.appendChild(btn);
+    });
+    const cancel = document.createElement('button');
+    cancel.className = 'btcmd';
+    cancel.style.cssText = 'flex:0 0 auto;padding:4px 8px;color:#ff8888';
+    cancel.textContent = '✕';
+    cancel.onclick = bCloseSubmenu;
+    sm.appendChild(cancel);
+  }
+}
+
+function bDoAttack(hero){
+  if(!G.battle) return;
+  const idx = G.battle.enemies.findIndex(e=>e.curHp>0);
+  if(idx<0) return;
+  const en = G.battle.enemies[idx];
+  const dmg = calcD(totalAtk(hero), en.def);
+  en.curHp = Math.max(0, en.curHp-dmg);
+  blg('dmg', `⚔️ ${hero.name} → ${en.emoji}${en.name}: -${dmg}HP`);
+  showDmgFloat(dmg, '#ff9999');
+  if(en.curHp<=0) blg('die', `💥 ${en.emoji}${en.name} 倒下！`);
+  checkWin();
+  if(G.battle){ enemyTurn(); renderBattle(); }
+}
+
+function bDoMagic(hero, sp){
+  if(!G.battle) return;
+  if(hero.mp < sp.mp){ blg('sys', `${hero.name} MP不足！`); return; }
+  hero.mp -= sp.mp;
+  const targets = sp.all
+    ? G.battle.enemies.filter(e=>e.curHp>0)
+    : [G.battle.enemies.find(e=>e.curHp>0)].filter(Boolean);
+  targets.forEach(en=>{
+    const dmg = calcD(sp.power, en.def*0.3);
+    en.curHp = Math.max(0, en.curHp-dmg);
+    blg('dmg', `${sp.emoji}${sp.name}：${en.emoji}${en.name} -${dmg}HP`);
+    showDmgFloat(dmg, '#88ccff');
+    if(en.curHp<=0) blg('die', `💥 ${en.emoji}${en.name} 倒下！`);
+  });
+  checkWin();
+  if(G.battle){ enemyTurn(); renderBattle(); }
+}
+
+// ── 自動戰鬥 ──
+function toggleAutoBattle(){
+  _autoBattle = !_autoBattle;
+  const btn = document.getElementById('bt-auto-btn');
+  if(_autoBattle){
+    btn.style.background = '#1a4a1a';
+    btn.style.boxShadow = '0 0 8px rgba(68,255,170,0.5)';
+    blg('sys', '🤖 自動戰鬥開啟！');
+    bCloseSubmenu();
+    runAutoBattle();
+  } else {
+    btn.style.background = '';
+    btn.style.boxShadow = '';
+    blg('sys', '🤖 自動戰鬥停止');
+    clearTimeout(_autoTimer);
+  }
+}
+
+function runAutoBattle(){
+  if(!_autoBattle || !G.battle) return;
+  // 每個存活隊員輪流執行最佳行動
+  const alive = G.party.filter(h=>h.hp>0);
+  alive.forEach(hero=>{
+    if(!G.battle) return;
+    // 優先用攻擊魔法，否則普攻
+    const atkSp = SPELLS.filter(s=>(hero.spells||[]).includes(s.name)&&s.type==='atk'&&hero.mp>=s.mp)
+                        .sort((a,b)=>b.power-a.power);
+    if(atkSp.length){
+      bDoMagic(hero, atkSp[0]);
+    } else {
+      bDoAttack(hero);
+    }
+  });
+  if(G.battle && _autoBattle){
+    _autoTimer = setTimeout(runAutoBattle, 900);
+  }
+}
+
 function bCmd(action){
   if(!G.battle) return;
-  if(action==='attack'){
-    const idx=G.battle.enemies.findIndex(e=>e.curHp>0);
-    if(idx<0) return;
-    playerAttack(idx);
-  } else if(action==='magic'){
-    // pick strongest spell
-    const hero=G.party.find(h=>h.hp>0);
-    const known=hero?.spells||[];
-    const atkSp=SPELLS.filter(s=>known.includes(s.name)&&s.type==='atk').sort((a,b)=>b.power-a.power);
-    if(!atkSp.length){ blg('sys','無攻擊魔法！'); return; }
-    const sp=atkSp[0];
-    if(hero.mp<sp.mp){ blg('sys',`${hero.name} MP不足！`); return; }
-    hero.mp-=sp.mp;
-    const targets=sp.all?G.battle.enemies.filter(e=>e.curHp>0):[G.battle.enemies.find(e=>e.curHp>0)].filter(Boolean);
-    targets.forEach(en=>{
-      const dmg=calcD(sp.power,en.def*0.3);
-      en.curHp=Math.max(0,en.curHp-dmg);
-      blg('dmg',`${sp.emoji}${sp.name}：${en.emoji}${en.name} -${dmg}HP`);
-      showDmgFloat(dmg,'#88ccff');
-      if(en.curHp<=0) blg('die',`💥 ${en.emoji}${en.name} 倒下！`);
-    });
-    checkWin();
-    renderBattle();
-  } else if(action==='item'){
+  if(action==='item'){
     const usable=Object.keys(G.inv).find(k=>G.inv[k]>0&&ITEMS[k]?.type==='heal');
     if(!usable){ blg('sys','無可用道具！'); return; }
     doUseItem(usable);
@@ -1847,15 +1972,7 @@ function bCmd(action){
 
 function playerAttack(idx){
   const hero=G.party.find(h=>h.hp>0); if(!hero) return;
-  const en=G.battle.enemies[idx]; if(!en||en.curHp<=0) return;
-  const dmg=calcD(totalAtk(hero),en.def);
-  en.curHp=Math.max(0,en.curHp-dmg);
-  blg('dmg',`⚔️ ${hero.name} → ${en.emoji}${en.name}: -${dmg}HP`);
-  showDmgFloat(dmg,'#ff9999');
-  if(en.curHp<=0) blg('die',`💥 ${en.emoji}${en.name} 倒下！`);
-  checkWin();
-  if(G.battle) enemyTurn();
-  renderBattle();
+  bDoAttack(hero);
 }
 
 function enemyTurn(){
@@ -1900,6 +2017,14 @@ function checkWin(){
 }
 
 function endBattle(){
+  // 停止自動戰鬥
+  if(_autoBattle){
+    _autoBattle=false;
+    clearTimeout(_autoTimer);
+    const btn=document.getElementById('bt-auto-btn');
+    if(btn){ btn.style.background=''; btn.style.boxShadow=''; }
+  }
+  bCloseSubmenu();
   G.battle=null;
   document.getElementById('battle').classList.remove('active');
   renderHudBot();
@@ -1986,31 +2111,60 @@ function openPopup(type, shopKey){
       body.appendChild(d);
     });
   } else if(type==='equip'){
-    title.textContent='⚔️ 裝備';
-    const hero=G.party[0];
+    // 隊員切換索引
+    if(G._equipMemberIdx===undefined) G._equipMemberIdx=0;
+    const memberIdx = Math.min(G._equipMemberIdx, G.party.length-1);
+    const hero = G.party[memberIdx];
     const slots=['weapon','armor','shield','boots'];
     const labels={weapon:'武器',armor:'防具',shield:'盾',boots:'鞋'};
+
+    // 標題列 + 隊員切換按鈕
+    title.innerHTML='<span style="vertical-align:middle">⚔️ 裝備</span>';
+    const tabRow = document.createElement('div');
+    tabRow.style.cssText='display:flex;gap:4px;padding:4px 6px;border-bottom:1px solid #1a3a1a;flex-wrap:wrap';
+    G.party.forEach((h,i)=>{
+      const tb=document.createElement('button');
+      tb.className='dchoice';
+      tb.style.cssText=`background:${i===memberIdx?'#2a5a2a':'#1a3a1a'};border-color:${i===memberIdx?'#88ffcc':'#4a6'}`;
+      tb.textContent=`${h.emoji} ${h.name}`;
+      tb.onclick=()=>{ G._equipMemberIdx=i; openPopup('equip'); };
+      tabRow.appendChild(tb);
+    });
+    body.appendChild(tabRow);
+
+    // 目前裝備
+    const curLabel=document.createElement('div');
+    curLabel.className='popup-item';
+    curLabel.style.color='#ffdd44';
+    curLabel.textContent=`── ${hero.emoji} ${hero.name} 目前裝備 ──`;
+    body.appendChild(curLabel);
+
     slots.forEach(slot=>{
       const eq=hero[slot];
       const it=eq?ITEMS[eq]:null;
       const d=document.createElement('div');
       d.className='popup-item';
-      d.innerHTML=`<span class="pi-emoji">${it?.emoji||'　'}</span><span>${labels[slot]}：${it?.name||'無'}</span>`;
+      d.innerHTML=`<span class="pi-emoji">${it?.emoji||'─'}</span><span>${labels[slot]}：${it?.name||'無'}</span>`;
       body.appendChild(d);
     });
-    // list equippable items
+
+    // 可更換裝備
+    const hasEquip = Object.keys(G.inv).some(k=>G.inv[k]>0&&['weapon','armor','shield','boots'].includes(ITEMS[k]?.type));
     const d2=document.createElement('div');
     d2.className='popup-item';
     d2.style.color='#ffdd44';
-    d2.textContent='── 更換裝備 ──';
+    d2.textContent=hasEquip?'── 更換裝備 ──':'── 無可更換裝備 ──';
     body.appendChild(d2);
+
     Object.keys(G.inv).filter(k=>G.inv[k]>0).forEach(k=>{
       const it=ITEMS[k];
       if(!it||!['weapon','armor','shield','boots'].includes(it.type)) return;
+      const isCurrent = hero[it.type]===k;
       const d=document.createElement('div');
       d.className='popup-item';
-      d.innerHTML=`<span class="pi-emoji">${it.emoji}</span><span>${it.name}</span><span class="pi-sub">裝備</span>`;
-      d.onclick=()=>{ hero[it.type]=k; notify(`裝備 ${it.emoji}${it.name}！`); closePopup(); renderHudBot(); };
+      d.style.opacity=isCurrent?'0.5':'1';
+      d.innerHTML=`<span class="pi-emoji">${it.emoji}</span><span>${it.name}</span><span class="pi-sub">${isCurrent?'已裝備':'裝備'}</span>`;
+      if(!isCurrent) d.onclick=()=>{ hero[it.type]=k; notify(`${hero.name} 裝備 ${it.emoji}${it.name}！`); openPopup('equip'); renderHudBot(); };
       body.appendChild(d);
     });
   } else if(type==='status'){
